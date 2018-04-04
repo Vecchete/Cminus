@@ -1,0 +1,2339 @@
+LOAD.R (LOAD quando o endereço de memoria está em um registrador)
+STORE.R(STORE quando o endereço de memoria está em um registrador)
+PUSH.R (Empilha para a pilha de recursão, empilha um valor (enviado pela instrução), e o PROGRAM_COUNTER +1)
+POP.R (Desempilha a pilha de recursão, atualiza o PROGRAM_COUNTER)
+PUSH.PC (Empilha para a pilha de recursão, empilha um valor (enviado pela instrução), e o PROGRAM_COUNTER +1)
+POP.PC (Desempilha a pilha de recursão, atualiza o PROGRAM_COUNTER
+GREATEQ ??
+LESSEQ ??
+
+Em hardware: Um registrador que estará lendo o tempo todo o valor relativo da memoria
+
+$0 = Register Return
+$1 = Register result
+$2 = Register result2 //resultado op esquerda
+$3 = Register result3 //resultado op direita
+$4 = Register result4
+$5 = Register result5
+$6 = Register vetor_base //endereço base do vetor
+$7 = Register reserved
+
+
+- Passos
+
+- Variavel argument_cont//variavel que conta a quantidade de argumentos ja passados, serve como ponteiro para adicionar na memória.
+- Variavel register_cont// É um ponteiro que acompanha a tabela de registradores, indicando aonde inserir o proximo valor (aonde deve ocorrer o proximo LOAD), é incrementado depois de cada LOAD.
+- Variavel contador//É um contador de PC, que vai atrelar a cada instrução com um valor, ou seja, cada instrução de maquina terá seu PC atrelado.- Setar o register_cont com 8.
+- Variavel variavel_contador.///É um contador que verifica quantas variaveis tem uma função.
+- Variavel global_contador.
+- vetor argument_size
+- Zerar o contador de PC.
+- Zerar o argument_cont.
+- Inicializar uma pilha que armazena os registradores livres. //Sera verificado primeiro na pilha se existe registradores livres, se não houver nada na pilha então o dado será armazenado no registrador da posição "register_cont".
+- Procurar a main (FUNCTION_DEF) na lista.
+
+- identificar todas as variaveis globais declaradas usando a global_contador.
+- somar global_contador a variavel_contador.
+- identificar todas as variaveis declaradas da main usando a variavel_contador.
+- Criar uma tabela com variavel_contador+global_contador posições.
+- Inserir cada variavel na tabela por ordem de aparição, basta percorrer a tabela de simbolos, e colocar cada variavel que aparece que tem o mesmo escopo da funçaõ(nao decl de variavel, nem argumento de função).
+- Atribuir o numero de aparições de cada variavel. (informação adquirida analisando a tabela de simbolos)
+- Atribuir o tamanho de cada variavel.
+- A posição de cada variavel dessa tabela é o endereço de memória relativo. Por exemplo, se a variavel a estiver na posição 0 da tabela, então sua posição de memória relativa será 0.
+- Cria uma matriz com registradores (seria posição do vetor, exemplo posição 0 é $0), o campo de endereço de memoria relativo a aquele registrador, e um campo chamado flag_utilização que determina se o registrador está usado ou não.
+- Se o variavel_contador for maior que 32 (equivalente ao numero de registradores);
+	- Atribui aos primeiros 32 um valor de registrador, adiciona as posições de moria a cada registrador da matriz de registradores, marca uma flag_utilização como 1 dos registradores.
+- Senão
+	- atribui a todos um valor de registrador(sequencialmente).
+	- Atualiza matriz de registradores.
+	- register_cont = variavel_contador + 7 ;
+- PUSH.R com o variavel_contador. ********
+- Incrementar o contador
+- loop (condição de parada = halt):
+	- verifica cada tipo de "instrução"
+		- EQUAL, NOT EQUAL, LESS THAN, LESS OR EQUAL THEN, GREATER THEN, GREATER OR EQUAL THEN.
+			-Verificar se o primeiro operando é:
+				-Se o primeiro operando for variavel:
+					-Verificar se o primeiro operando for vetor;
+						-Se o primeiro operando for vetor:
+							- Verificar se o deslocamento é registrador, variavel ou imediato
+								- Se for imediato:
+									- Soma o imediato com a posição da memoria de v.
+									- LOAD do resultado da soma para result2; ********
+									- Incrementa contador
+								-Se for variavel:
+									-Verificar se tem um registrador atribuido a variavel;
+										- Se não tiver:
+											- Verifica se a pilha de registradores livres tem elementos.
+												- Se tiver:
+													- Desempilha o endereço de registrador livre.
+													- LOAD da posição da variavel na memoria para o  register_cont.
+													- Atualiza tabela de variaveis com o novo registrador.
+													- Atualiza matriz de registradores.
+													- Incrementa contador;
+												- Se não tiver:
+													- STORE do register_cont para a posição da memória encontrada no vetor. ********
+													- Incrementa contador;
+													- LOAD da posição da variavel na memoria para o  register_cont.
+													- Atualiza tabela de variaveis com o novo registrador, retirando do antigo.
+													- Atualiza matriz de registradores.
+													- Incrementa contador;
+													- Verificar se register_cont é < 39;
+														- Se for:
+															- Incrementa register_cont;
+														- Se não for:
+															- Seta register_cont com 8;
+									- Verifica se o endereço base é menor que 255
+										- Se for:
+											- ADD do endereço base de v com registrador da variavel para result2; ********
+											- Incrementa contador
+										- Se não for:
+											- Verifica se o endereço base é menor que 65536
+												- Se for:
+													- SRVALUE do endereço base de v para o registrador vetor_base. ******
+													- Incrementa contador
+													- ADD do vetor_base com registrador da variavel para result2; ********
+													- Incrementa contador.
+												- Se não for:
+													- Deslocar os bits do endereço base de v para a direita, 16 bits.
+													- SRVALUE do deslocado para o result1. ******
+													- Incrementa contador.
+													- Deslocar os bits do endereço base de v para a esquerda, 16 bits.
+													- Fazer o endereço base de v  - deslocado.
+													- SRVALUE do resultado para o vetor_base. ******
+													- Incrementa contador.
+													- SHL do result1 com 4 para o result1. ******
+													- Incrementa contador.
+													- ADD do result1 com vetor_base para o vetor_base. ******
+													- Incrementa contador.
+													- ADD do vetor_base com registrador da variavel para result2; ********
+													- Incrementa contador.
+									- LOAD.R do valor de memoria localizado no result2 para result2; ********
+									- Incrementa contador.	
+								-Se for registrador:
+									- Procurar o temporario no result4 e result5.
+									- Verifica se o endereço base é menor que 256
+										- Se for:
+											- ADD do endereço base de v com result4,5 para result2; ********
+											- Incrementa contador
+										- Se não for:
+											- Verifica se o endereço base é menor que 65536
+												- Se for:
+													- SRVALUE do endereço base de v para o registrador vetor_base. ******
+													- Incrementa contador
+													- ADD do vetor_base com result4,5 para result2; ********
+													- Incrementa contador.
+												- Se não for:
+													- Deslocar os bits do endereço base de v para a direita, 4 bits.
+													- SRVALUE do deslocado para o result1. ******
+													- Incrementa contador.
+													- Deslocar os bits do endereço base de v para a esquerda, 4 bits.
+													- Fazer o endereço base de v  - deslocado.
+													- SRVALUE do resultado para o vetor_base. ******
+													- Incrementa contador.
+													- SHL do result1 com 4 para o result1. ******
+													- Incrementa contador.
+													- ADD do result1 com vetor_base para o vetor_base. ******
+													- Incrementa contador.
+													- ADD do vetor_base com result4,5 para result2; ********
+													- Incrementa contador.
+									- Sinaliza o registrador result1,result 4 ou 5 como ja uzado com 0.
+									- LOAD.R do valor de memoria localizado no result2 para result2; ********
+									- Incrementa contador.	
+							- Marca que a operação sera feita com o registrador.
+						- Se não for vetor:
+							-Verificar se tem um registrador atribuido a variavel;
+								- Se não tiver:
+									- Verifica se a pilha de registradores livres tem elementos.
+										- Se tiver:
+											- Desempilha o endereço de registrador livre.
+											- LOAD da posição da variavel na memoria para o  register_cont.******
+											- Atualiza tabela de variaveis com o novo registrador.
+											- Atualiza matriz de registradores.
+											- Incrementa contador;
+										- Se não tiver:
+											- STORE do register_cont para a posição da memória encontrada no vetor. ********
+											- Incrementa contador;
+											- LOAD da posição da variavel na memoria para o  register_cont.
+											- Atualiza tabela de variaveis com o novo registrador, retirando do antigo.
+											- Atualiza matriz de registradores.
+											- Incrementa contador;
+											- Verificar se register_cont é < 39;
+												- Se for:
+													- Incrementa register_cont;
+												- Se não for:
+													- Seta register_cont com 8;
+							- REGCOPY o registrador da variável para o result2. *******
+							- Incrementa contador.					
+							- Decrementa o valor do numero de ocorrencias da variavel na tabela
+							- Verifica se há ocorrencia da variável. (Se o numero de ocorrencias for maior que 0).
+								- Se não:
+									- STORE do registrador equivalente da variavel na posição de memoria. ******
+									- Incrementa contador.
+									- Empilha registrador livre.
+									- Atualiza tabela de variaveis.
+									- Atualiza matriz de registradores.
+				- Se o primeiro operando for um registrador:
+					- Procurar o temporario no result4 e result5.
+					- REGCOPY o registrador , 4, 5 para o result2. *******
+					- Incrementa contador.
+					- Sinaliza o registrador ,result 4 ou 5 como ja usado com 0.
+				- Se o primeiro operando for um imediato:
+					- Se o imediato for menor que 65536
+						- SRVALUE do imediato para o result2. ******
+						- Incrementa contador.
+					- Se não:
+						- Deslocar os bits para a direita, 16 bits.
+						- SRVALUE do deslocado para o result1. ******
+						- Incrementa contador.
+						- Deslocar os bits para a esquerda, 16 bits.
+						- Fazer o imediato - deslocado.
+						- SRVALUE do resultado para o result2. ******
+						- Incrementa contador.
+						- SHL do result1 com 16 para o result1. ******
+						- Incrementa contador.
+						- ADD do result1 com result2 para o result2. ******
+						- Incrementa contador.
+			-Verificar se o segundo operando é:
+				-Se o segundo operando for variavel:
+					-Verificar se o segundo operando for vetor;
+						-Se o segundo operando for vetor:
+							- Verificar se o deslocamento é registrador, variavel ou imediato
+								- Se for imediato:
+									- Soma o imediato com a posição da memoria de v.
+									- LOAD do resultado da soma para result3; ********
+									- Incrementa contador
+								-Se for variavel:
+									-Verificar se tem um registrador atribuido a variavel;
+										- Se não tiver:
+											- Verifica se a pilha de registradores livres tem elementos.
+												- Se tiver:
+													- Desempilha o endereço de registrador livre.
+													- LOAD da posição da variavel na memoria para o  register_cont.
+													- Atualiza tabela de variaveis com o novo registrador.
+													- Atualiza matriz de registradores.
+													- Incrementa contador;
+												- Se não tiver:
+													- STORE do register_cont para a posição da memória encontrada no vetor. ********
+													- Incrementa contador;
+													- LOAD da posição da variavel na memoria para o  register_cont.
+													- Atualiza tabela de variaveis com o novo registrador, retirando do antigo.
+													- Atualiza matriz de registradores.
+													- Incrementa contador;
+													- Verificar se register_cont é < 39;
+														- Se for:
+															- Incrementa register_cont;
+														- Se não for:
+															- Seta register_cont com 8;
+									- Verifica se o endereço base é menor que 255
+										- Se for:
+											- ADD do endereço base de v com registrador da variavel para result3; ********
+											- Incrementa contador
+										- Se não for:
+											- Verifica se o endereço base é menor que 65536
+												- Se for:
+													- SRVALUE do endereço base de v para o registrador vetor_base. ******
+													- Incrementa contador
+													- ADD do vetor_base com registrador da variavel para result3; ********
+													- Incrementa contador.
+												- Se não for:
+													- Deslocar os bits do endereço base de v para a direita, 4 bits.
+													- SRVALUE do deslocado para o result1. ******
+													- Incrementa contador.
+													- Deslocar os bits do endereço base de v para a esquerda, 4 bits.
+													- Fazer o endereço base de v  - deslocado.
+													- SRVALUE do resultado para o vetor_base. ******
+													- Incrementa contador.
+													- SHL do result1 com 4 para o result1. ******
+													- Incrementa contador.
+													- ADD do result1 com vetor_base para o vetor_base. ******
+													- Incrementa contador.
+													- ADD do vetor_base com registrador da variavel para result3; ********
+													- Incrementa contador.
+									- LOAD.R do valor de memoria localizado no result3 para result3; ********
+									- Incrementa contador.	
+								-Se for registrador:
+									- Procurar o temporario no result4 e result5.
+									- Verifica se o endereço base é menor que 256
+										- Se for:
+											- ADD do endereço base de v com result4,5 para result3; ********
+											- Incrementa contador
+										- Se não for:
+											- Verifica se o endereço base é menor que 65536
+												- Se for:
+													- SRVALUE do endereço base de v para o registrador vetor_base. ******
+													- Incrementa contador
+													- ADD do vetor_base com result4,5 para result3; ********
+													- Incrementa contador.
+												- Se não for:
+													- Deslocar os bits do endereço base de v para a direita, 16 bits.
+													- SRVALUE do deslocado para o result1. ******
+													- Incrementa contador.
+													- Deslocar os bits do endereço base de v para a esquerda, 16 bits.
+													- Fazer o endereço base de v  - deslocado.
+													- SRVALUE do resultado para o vetor_base. ******
+													- Incrementa contador.
+													- SHL do result1 com 16 para o result1. ******
+													- Incrementa contador.
+													- ADD do result1 com vetor_base para o vetor_base. ******
+													- Incrementa contador.
+													- ADD do vetor_base com result4,5 para result3; ********
+													- Incrementa contador.
+									- Sinaliza o registrador result1,result 4 ou 5 como ja uzado com 0.
+									- LOAD.R do valor de memoria localizado no result3 para result3; ********
+									- Incrementa contador.	
+							- Marca que a operação sera feita com o registrador.
+						- Se não for vetor:
+							-Verificar se tem um registrador atribuido a variavel;
+								- Se não tiver:
+									- Verifica se a pilha de registradores livres tem elementos.
+										- Se tiver:
+											- Desempilha o endereço de registrador livre.
+											- LOAD da posição da variavel na memoria para o  register_cont.******
+											- Atualiza tabela de variaveis com o novo registrador.
+											- Atualiza matriz de registradores.
+											- Incrementa contador;
+										- Se não tiver:
+											- STORE do register_cont para a posição da memória encontrada no vetor. ********
+											- Incrementa contador;
+											- LOAD da posição da variavel na memoria para o  register_cont.
+											- Atualiza tabela de variaveis com o novo registrador, retirando do antigo.
+											- Atualiza matriz de registradores.
+											- Incrementa contador;
+											- Verificar se register_cont é < 39;
+												- Se for:
+													- Incrementa register_cont;
+												- Se não for:
+													- Seta register_cont com 8;
+							- REGCOPY o registrador da variável para o result3. *******
+							- Incrementa contador.					
+							- Decrementa o valor do numero de ocorrencias da variavel na tabela
+							- Verifica se há ocorrencia da variável. (Se o numero de ocorrencias for maior que 0).
+								- Se não:
+									- STORE do registrador equivalente da variavel na posição de memoria. ******
+									- Incrementa contador.
+									- Empilha registrador livre.
+									- Atualiza tabela de variaveis.
+									- Atualiza matriz de registradores.
+				- Se o segundo operando for um registrador:
+					- Procurar o temporario no , result4 e result5.
+					- REGCOPY o registrador , 4, 5 para o result3. *******
+					- Incrementa contador.
+					- Sinaliza o registrador ,result 4 ou 5 como ja usado com 0.
+				- Se o segundo operando for um imediato:
+					- Se o imediato for menor que 65536
+						- SRVALUE do imediato para o result3. ******
+						- Incrementa contador.
+					- Se não:
+						- Deslocar os bits para a direita, 16 bits.
+						- SRVALUE do deslocado para o result1. ******
+						- Incrementa contador.
+						- Deslocar os bits para a esquerda, 16 bits.
+						- Fazer o imediato - deslocado.
+						- SRVALUE do resultado para o result3. ******
+						- Incrementa contador.
+						- SHL do result1 com 16 para o result1. ******
+						- Incrementa contador.
+						- ADD do result1 com result3 para o result3. ******
+						- Incrementa contador.
+			- Usa um Jump relacionado a operação, para a label do proximo nó que deve ser if_false. ********
+			- Incrementa contador.
+		- LABEL
+			- loop que começa do registrador 8, condição de parada é quando registrador for maior que 39.
+				- Se a flag_utilização do registrador $x for 1
+					- STORE, $x, posição de memória na tabela.
+					- Incrementa contador.
+					- Coloca flag_utilização do $x como 0.
+			- CRIA nó com a label.
+			- Zera a pilha de registradores livre.
+			- Coloca o register_cont = 8;
+			- loop que começa na variavel 0 da tabela de memoria, condição de parada é o contador_variaveis
+				- verifica se existe aparições.
+					- Atribui o registrador register_cont.
+					- Atualiza tabela de registradores.
+					- Coloca flag_utilização $register_cont como 1;
+					- LOAD variavel $register_cont
+					- Incrementa contador.
+					- register_cont++;
+		- GOTO
+			- loop que começa do registrador 8, condição de parada é quando registrador for maior que 39.
+				- Se a flag_utilização do registrador $x for 1
+					- STORE, $x, posição de memória na tabela.
+					- Incrementa contador.
+					- Coloca flag_utilização do $x como 0.
+			- JUMP para a label.*******
+			- Incrementa contador.
+			- Zera a pilha de registradores livre.
+			- Coloca o register_cont = 8;
+			- loop que começa na variavel 0 da tabela de memoria, condição de parada é o contador_variaveis
+				- verifica se existe aparições.
+					- Atribui o registrador register_cont.
+					- Atualiza tabela de registradores.
+					- Coloca flag_utilização $register_cont como 1;
+					- LOAD variavel $register_cont
+					- Incrementa contador.
+					- register_cont++;
+		- ARGUMENT
+			-Verificar se o primeiro operando é:
+				-Se o primeiro operando for variavel:
+					-Verificar se o primeiro operando for vetor;
+						-Se o primeiro operando for vetor:
+							- Se ele possuir uma posição.
+								- Verificar se o deslocamento é registrador, variavel ou imediato
+									- Se for imediato:
+										- Soma o imediato com a posição da memoria de v.
+										- LOAD do resultado da soma para result2; ********
+										- Incrementa contador
+									-Se for variavel:
+										-Verificar se tem um registrador atribuido a variavel;
+											- Se não tiver:
+												- Verifica se a pilha de registradores livres tem elementos.
+													- Se tiver:
+														- Desempilha o endereço de registrador livre.
+														- LOAD da posição da variavel na memoria para o  register_cont.
+														- Atualiza tabela de variaveis com o novo registrador.
+														- Atualiza matriz de registradores.
+														- Incrementa contador;
+													- Se não tiver:
+														- STORE do register_cont para a posição da memória encontrada no vetor. ********
+														- Incrementa contador;
+														- LOAD da posição da variavel na memoria para o  register_cont.
+														- Atualiza tabela de variaveis com o novo registrador, retirando do antigo.
+														- Atualiza matriz de registradores.
+														- Incrementa contador;
+														- Verificar se register_cont é < 39;
+															- Se for:
+																- Incrementa register_cont;
+															- Se não for:
+																- Seta register_cont com 8;
+										- Verifica se o endereço base é menor que 255
+											- Se for:
+												- ADD do endereço base de v com registrador da variavel para result2; ********
+												- Incrementa contador
+											- Se não for:
+												- Verifica se o endereço base é menor que 65536
+													- Se for:
+														- SRVALUE do endereço base de v para o registrador vetor_base. ******
+														- Incrementa contador
+														- ADD do vetor_base com registrador da variavel para result2; ********
+														- Incrementa contador.
+													- Se não for:
+														- Deslocar os bits do endereço base de v para a direita, 16 bits.
+														- SRVALUE do deslocado para o result1. ******
+														- Incrementa contador.
+														- Deslocar os bits do endereço base de v para a esquerda, 16 bits.
+														- Fazer o endereço base de v  - deslocado.
+														- SRVALUE do resultado para o vetor_base. ******
+														- Incrementa contador.
+														- SHL do result1 com 4 para o result1. ******
+														- Incrementa contador.
+														- ADD do result1 com vetor_base para o vetor_base. ******
+														- Incrementa contador.
+														- ADD do vetor_base com registrador da variavel para result2; ********
+														- Incrementa contador.
+										- LOAD.R do valor de memoria localizado no result2 para result2; ********
+										- Incrementa contador.	
+									-Se for registrador:
+										- Procurar o temporario no result4 e result5.
+										- Verifica se o endereço base é menor que 256
+											- Se for:
+												- ADD do endereço base de v com result4,5 para result2; ********
+												- Incrementa contador
+											- Se não for:
+												- Verifica se o endereço base é menor que 65536
+													- Se for:
+														- SRVALUE do endereço base de v para o registrador vetor_base. ******
+														- Incrementa contador
+														- ADD do vetor_base com result4,5 para result2; ********
+														- Incrementa contador.
+													- Se não for:
+														- Deslocar os bits do endereço base de v para a direita, 16 bits.
+														- SRVALUE do deslocado para o result1. ******
+														- Incrementa contador.
+														- Deslocar os bits do endereço base de v para a esquerda, 16 bits.
+														- Fazer o endereço base de v  - deslocado.
+														- SRVALUE do resultado para o vetor_base. ******
+														- Incrementa contador.
+														- SHL do result1 com 4 para o result1. ******
+														- Incrementa contador.
+														- ADD do result1 com vetor_base para o vetor_base. ******
+														- Incrementa contador.
+														- ADD do vetor_base com result4,5 para result2; ********
+														- Incrementa contador.
+										- Sinaliza o registrador result1,result 4 ou 5 como ja uzado com 0.
+										- LOAD.R do valor de memoria localizado no result2 para result2; ********
+										- Incrementa contador.	
+								- STORE do result2 para argument_cont+variavel_contador.
+								- Incrementa contador.
+								- Incrementa argument_cont; 
+							- Se não possuir uma posição.
+								-	loop , condição de parada é quando alcançar o size do vetor.
+									- LOAD (endereço base de v + i) para o result2
+									- Incrementa contador.
+									- STORE do result2 para argument_cont+variavel_contador.
+									- Incrementa contador.
+									- Incrementa argument_cont;
+						- Se não for vetor:
+							-Verificar se tem um registrador atribuido a variavel;
+								- Se não tiver:
+									- Verifica se a pilha de registradores livres tem elementos.
+										- Se tiver:
+											- Desempilha o endereço de registrador livre.
+											- LOAD da posição da variavel na memoria para o  register_cont.******
+											- Atualiza tabela de variaveis com o novo registrador.
+											- Atualiza matriz de registradores.
+											- Incrementa contador;
+										- Se não tiver:
+											- STORE do register_cont para a posição da memória encontrada no vetor. ********
+											- Incrementa contador;
+											- LOAD da posição da variavel na memoria para o  register_cont.
+											- Atualiza tabela de variaveis com o novo registrador, retirando do antigo.
+											- Atualiza matriz de registradores.
+											- Incrementa contador;
+											- Verificar se register_cont é < 39;
+												- Se for:
+													- Incrementa register_cont;
+												- Se não for:
+													- Seta register_cont com 8;
+							- REGCOPY o registrador da variável para o result2. *******
+							- Incrementa contador.					
+							- Decrementa o valor do numero de ocorrencias da variavel na tabela
+							- Verifica se há ocorrencia da variável. (Se o numero de ocorrencias for maior que 0).
+								- Se não:
+									- STORE do registrador equivalente da variavel na posição de memoria. ******
+									- Incrementa contador.
+									- Empilha registrador livre.
+									- Atualiza tabela de variaveis.
+									- Atualiza matriz de registradores.
+							- STORE do result2 para argument_cont+variavel_contador.
+							- Incrementa contador.
+							- Incrementa argument_cont; 
+				- Se o primeiro operando for um registrador:
+					- Procurar o temporario no result4 e result5.
+					- REGCOPY o registrador , 4, 5 para o result2. *******
+					- Incrementa contador.
+					- Sinaliza o registrador ,result 4 ou 5 como ja usado com 0.
+					- STORE do result2 para argument_cont+variavel_contador.
+					- Incrementa contador.
+					- Incrementa argument_cont; 
+				- Se o primeiro operando for um imediato:
+					- Se o imediato for menor que 256
+						- SRVALUE do imediato para o result2. ******
+						- Incrementa contador.
+					- Se não:
+						- Deslocar os bits para a direita, 16 bits.
+						- SRVALUE do deslocado para o result1. ******
+						- Incrementa contador.
+						- Deslocar os bits para a esquerda, 16 bits.
+						- Fazer o imediato - deslocado.
+						- SRVALUE do resultado para o result2. ******
+						- Incrementa contador.
+						- SHL do result1 com 16 para o result1. ******
+						- Incrementa contador.
+						- ADD do result1 com result2 para o result2. ******
+						- Incrementa contador.
+					- STORE do result2 para argument_cont+variavel_contador.
+					- Incrementa contador.
+					- Incrementa argument_cont; 
+		- FUNCAL
+			- Zera o argument_cont.
+			- loop que começa do registrador 8, condição de parada é quando registrador for maior que 39.
+				- Se a flag_utilização do registrador $x for 1
+					- STORE, $x, posição de memória na tabela.
+					- Incrementa contador.
+					- Coloca flag_utilização do $x como 0.
+			- PUSH.PC(contador+2).
+			- Incrementa contador.
+			- JUMP para a label com o nome da funcao.*******
+			- Incrementa contador.
+			- Zera a pilha de registradores livre.
+			- Coloca o register_cont = 8;
+			- loop que começa na variavel 0 da tabela de memoria, condição de parada é o contador_variaveis
+				- verifica se existe aparições.
+					- Atribui o registrador register_cont.
+					- Atualiza tabela de registradores.
+					- Coloca flag_utilização $register_cont como 1;
+					- LOAD variavel $register_cont
+					- Incrementa contador.
+					- register_cont++;
+		- RET
+			-Verificar se o primeiro operando é:
+				-Se o primeiro operando for variavel:
+					-Verificar se o primeiro operando for vetor;
+						-Se o primeiro operando for vetor:
+							- Verificar se o deslocamento é registrador, variavel ou imediato
+								- Se for imediato:
+									- Soma o imediato com a posição da memoria de v.
+									- LOAD do resultado da soma para result2; ********
+									- Incrementa contador
+								-Se for variavel:
+									-Verificar se tem um registrador atribuido a variavel;
+										- Se não tiver:
+											- Verifica se a pilha de registradores livres tem elementos.
+												- Se tiver:
+													- Desempilha o endereço de registrador livre.
+													- LOAD da posição da variavel na memoria para o  register_cont.
+													- Atualiza tabela de variaveis com o novo registrador.
+													- Atualiza matriz de registradores.
+													- Incrementa contador;
+												- Se não tiver:
+													- STORE do register_cont para a posição da memória encontrada no vetor. ********
+													- Incrementa contador;
+													- LOAD da posição da variavel na memoria para o  register_cont.
+													- Atualiza tabela de variaveis com o novo registrador, retirando do antigo.
+													- Atualiza matriz de registradores.
+													- Incrementa contador;
+													- Verificar se register_cont é < 39;
+														- Se for:
+															- Incrementa register_cont;
+														- Se não for:
+															- Seta register_cont com 8;
+									- Verifica se o endereço base é menor que 255
+										- Se for:
+											- ADD do endereço base de v com registrador da variavel para result2; ********
+											- Incrementa contador
+										- Se não for:
+											- Verifica se o endereço base é menor que 65536
+												- Se for:
+													- SRVALUE do endereço base de v para o registrador vetor_base. ******
+													- Incrementa contador
+													- ADD do vetor_base com registrador da variavel para result2; ********
+													- Incrementa contador.
+												- Se não for:
+													- Deslocar os bits do endereço base de v para a direita, 16 bits.
+													- SRVALUE do deslocado para o result1. ******
+													- Incrementa contador.
+													- Deslocar os bits do endereço base de v para a esquerda, 16 bits.
+													- Fazer o endereço base de v  - deslocado.
+													- SRVALUE do resultado para o vetor_base. ******
+													- Incrementa contador.
+													- SHL do result1 com 4 para o result1. ******
+													- Incrementa contador.
+													- ADD do result1 com vetor_base para o vetor_base. ******
+													- Incrementa contador.
+													- ADD do vetor_base com registrador da variavel para result2; ********
+													- Incrementa contador.
+									- LOAD.R do valor de memoria localizado no result2 para result2; ********
+									- Incrementa contador.	
+								-Se for registrador:
+									- Procurar o temporario no result4 e result5.
+									- Verifica se o endereço base é menor que 256
+										- Se for:
+											- ADD do endereço base de v com result4,5 para result2; ********
+											- Incrementa contador
+										- Se não for:
+											- Verifica se o endereço base é menor que 65536
+												- Se for:
+													- SRVALUE do endereço base de v para o registrador vetor_base. ******
+													- Incrementa contador
+													- ADD do vetor_base com result4,5 para result2; ********
+													- Incrementa contador.
+												- Se não for:
+													- Deslocar os bits do endereço base de v para a direita, 16 bits.
+													- SRVALUE do deslocado para o result1. ******
+													- Incrementa contador.
+													- Deslocar os bits do endereço base de v para a esquerda, 16 bits.
+													- Fazer o endereço base de v  - deslocado.
+													- SRVALUE do resultado para o vetor_base. ******
+													- Incrementa contador.
+													- SHL do result1 com 4 para o result1. ******
+													- Incrementa contador.
+													- ADD do result1 com vetor_base para o vetor_base. ******
+													- Incrementa contador.
+													- ADD do vetor_base com result4,5 para result2; ********
+													- Incrementa contador.
+									- Sinaliza o registrador result1,result 4 ou 5 como ja uzado com 0.
+									- LOAD.R do valor de memoria localizado no result2 para result2; ********
+									- Incrementa contador.	
+							- Marca que a operação sera feita com o registrador.
+						- Se não for vetor:
+							-Verificar se tem um registrador atribuido a variavel;
+								- Se não tiver:
+									- Verifica se a pilha de registradores livres tem elementos.
+										- Se tiver:
+											- Desempilha o endereço de registrador livre.
+											- LOAD da posição da variavel na memoria para o  register_cont.******
+											- Atualiza tabela de variaveis com o novo registrador.
+											- Atualiza matriz de registradores.
+											- Incrementa contador;
+										- Se não tiver:
+											- STORE do register_cont para a posição da memória encontrada no vetor. ********
+											- Incrementa contador;
+											- LOAD da posição da variavel na memoria para o  register_cont.
+											- Atualiza tabela de variaveis com o novo registrador, retirando do antigo.
+											- Atualiza matriz de registradores.
+											- Incrementa contador;
+											- Verificar se register_cont é < 39;
+												- Se for:
+													- Incrementa register_cont;
+												- Se não for:
+													- Seta register_cont com 8;
+							- REGCOPY o registrador da variável para o result2. *******
+							- Incrementa contador.					
+							- Decrementa o valor do numero de ocorrencias da variavel na tabela
+							- Verifica se há ocorrencia da variável. (Se o numero de ocorrencias for maior que 0).
+								- Se não:
+									- STORE do registrador equivalente da variavel na posição de memoria. ******
+									- Incrementa contador.
+									- Empilha registrador livre.
+									- Atualiza tabela de variaveis.
+									- Atualiza matriz de registradores.
+				- Se o primeiro operando for um registrador:
+					- Procurar o temporario no result4 e result5.
+					- REGCOPY o registrador , 4, 5 para o result2. *******
+					- Incrementa contador.
+					- Sinaliza o registrador ,result 4 ou 5 como ja usado com 0.
+				- Se o primeiro operando for um imediato:
+					- Se o imediato for menor que 256
+						- SRVALUE do imediato para o result2. ******
+						- Incrementa contador.
+					- Se não:
+						- Deslocar os bits para a direita, 16 bits.
+						- SRVALUE do deslocado para o result1. ******
+						- Incrementa contador.
+						- Deslocar os bits para a esquerda, 16 bits.
+						- Fazer o imediato - deslocado.
+						- SRVALUE do resultado para o result2. ******
+						- Incrementa contador.
+						- SHL do result1 com 16 para o result1. ******
+						- Incrementa contador.
+						- ADD do result1 com result2 para o result2. ******
+						- Incrementa contador.
+			- REGCOPY do result2 para return.
+			- Incrementa contador.
+			- POP.R
+			- Incrementa contador.
+			- POP.PC
+			- Incrementa contador.
+		- IF_FALSE
+			- Pula para o próximo nó.
+		- ADD,SUB,DIV,MULT, SHR, SHL.
+			-Verificar se o primeiro operando é:
+				-Se o primeiro operando for variavel:
+					-Verificar se o primeiro operando for vetor;
+						-Se o primeiro operando for vetor:
+							- Verificar se o deslocamento é registrador, variavel ou imediato
+								- Se for imediato:
+									- Soma o imediato com a posição da memoria de v.
+									- LOAD do resultado da soma para result2; ********
+									- Incrementa contador
+								-Se for variavel:
+									-Verificar se tem um registrador atribuido a variavel;
+										- Se não tiver:
+											- Verifica se a pilha de registradores livres tem elementos.
+												- Se tiver:
+													- Desempilha o endereço de registrador livre.
+													- LOAD da posição da variavel na memoria para o  register_cont.
+													- Atualiza tabela de variaveis com o novo registrador.
+													- Atualiza matriz de registradores.
+													- Incrementa contador;
+												- Se não tiver:
+													- STORE do register_cont para a posição da memória encontrada no vetor. ********
+													- Incrementa contador;
+													- LOAD da posição da variavel na memoria para o  register_cont.
+													- Atualiza tabela de variaveis com o novo registrador, retirando do antigo.
+													- Atualiza matriz de registradores.
+													- Incrementa contador;
+													- Verificar se register_cont é < 39;
+														- Se for:
+															- Incrementa register_cont;
+														- Se não for:
+															- Seta register_cont com 8;
+									- Verifica se o endereço base é menor que 255
+										- Se for:
+											- ADD do endereço base de v com registrador da variavel para result2; ********
+											- Incrementa contador
+										- Se não for:
+											- Verifica se o endereço base é menor que 65536
+												- Se for:
+													- SRVALUE do endereço base de v para o registrador vetor_base. ******
+													- Incrementa contador
+													- ADD do vetor_base com registrador da variavel para result2; ********
+													- Incrementa contador.
+												- Se não for:
+													- Deslocar os bits do endereço base de v para a direita, 16 bits.
+													- SRVALUE do deslocado para o result1. ******
+													- Incrementa contador.
+													- Deslocar os bits do endereço base de v para a esquerda, 16 bits.
+													- Fazer o endereço base de v  - deslocado.
+													- SRVALUE do resultado para o vetor_base. ******
+													- Incrementa contador.
+													- SHL do result1 com 4 para o result1. ******
+													- Incrementa contador.
+													- ADD do result1 com vetor_base para o vetor_base. ******
+													- Incrementa contador.
+													- ADD do vetor_base com registrador da variavel para result2; ********
+													- Incrementa contador.
+									- LOAD.R do valor de memoria localizado no result2 para result2; ********
+									- Incrementa contador.	
+								-Se for registrador:
+									- Procurar o temporario no result4 e result5.
+									- Verifica se o endereço base é menor que 256
+										- Se for:
+											- ADD do endereço base de v com result4,5 para result2; ********
+											- Incrementa contador
+										- Se não for:
+											- Verifica se o endereço base é menor que 65536
+												- Se for:
+													- SRVALUE do endereço base de v para o registrador vetor_base. ******
+													- Incrementa contador
+													- ADD do vetor_base com result4,5 para result2; ********
+													- Incrementa contador.
+												- Se não for:
+													- Deslocar os bits do endereço base de v para a direita, 16 bits.
+													- SRVALUE do deslocado para o result1. ******
+													- Incrementa contador.
+													- Deslocar os bits do endereço base de v para a esquerda, 16 bits.
+													- Fazer o endereço base de v  - deslocado.
+													- SRVALUE do resultado para o vetor_base. ******
+													- Incrementa contador.
+													- SHL do result1 com 4 para o result1. ******
+													- Incrementa contador.
+													- ADD do result1 com vetor_base para o vetor_base. ******
+													- Incrementa contador.
+													- ADD do vetor_base com result4,5 para result2; ********
+													- Incrementa contador.
+									- Sinaliza o registrador result1,result 4 ou 5 como ja uzado com 0.
+									- LOAD.R do valor de memoria localizado no result2 para result2; ********
+									- Incrementa contador.	
+							- Marca que a operação sera feita com o registrador.
+						- Se não for vetor:
+							-Verificar se tem um registrador atribuido a variavel;
+								- Se não tiver:
+									- Verifica se a pilha de registradores livres tem elementos.
+										- Se tiver:
+											- Desempilha o endereço de registrador livre.
+											- LOAD da posição da variavel na memoria para o  register_cont.******
+											- Atualiza tabela de variaveis com o novo registrador.
+											- Atualiza matriz de registradores.
+											- Incrementa contador;
+										- Se não tiver:
+											- STORE do register_cont para a posição da memória encontrada no vetor. ********
+											- Incrementa contador;
+											- LOAD da posição da variavel na memoria para o  register_cont.
+											- Atualiza tabela de variaveis com o novo registrador, retirando do antigo.
+											- Atualiza matriz de registradores.
+											- Incrementa contador;
+											- Verificar se register_cont é < 39;
+												- Se for:
+													- Incrementa register_cont;
+												- Se não for:
+													- Seta register_cont com 8;
+							- REGCOPY o registrador da variável para o result2. *******
+							- Incrementa contador.					
+							- Decrementa o valor do numero de ocorrencias da variavel na tabela
+							- Verifica se há ocorrencia da variável. (Se o numero de ocorrencias for maior que 0).
+								- Se não:
+									- STORE do registrador equivalente da variavel na posição de memoria. ******
+									- Incrementa contador.
+									- Empilha registrador livre.
+									- Atualiza tabela de variaveis.
+									- Atualiza matriz de registradores.
+				- Se o primeiro operando for um registrador:
+					- Procurar o temporario no result4 e result5.
+					- REGCOPY o registrador , 4, 5 para o result2. *******
+					- Incrementa contador.
+					- Sinaliza o registrador ,result 4 ou 5 como ja usado com 0.
+				- Se o primeiro operando for um imediato:
+					- Se o imediato for menor que 256
+						- SRVALUE do imediato para o result2. ******
+						- Incrementa contador.
+					- Se não:
+						- Deslocar os bits para a direita, 16 bits.
+						- SRVALUE do deslocado para o result1. ******
+						- Incrementa contador.
+						- Deslocar os bits para a esquerda, 16 bits.
+						- Fazer o imediato - deslocado.
+						- SRVALUE do resultado para o result2. ******
+						- Incrementa contador.
+						- SHL do result1 com 16 para o result1. ******
+						- Incrementa contador.
+						- ADD do result1 com result2 para o result2. ******
+						- Incrementa contador.
+			-Verificar se o segundo operando é:
+				-Se o segundo operando for variavel:
+					-Verificar se o segundo operando for vetor;
+						-Se o segundo operando for vetor:
+							- Verificar se o deslocamento é registrador, variavel ou imediato
+								- Se for imediato:
+									- Soma o imediato com a posição da memoria de v.
+									- LOAD do resultado da soma para result3; ********
+									- Incrementa contador
+								-Se for variavel:
+									-Verificar se tem um registrador atribuido a variavel;
+										- Se não tiver:
+											- Verifica se a pilha de registradores livres tem elementos.
+												- Se tiver:
+													- Desempilha o endereço de registrador livre.
+													- LOAD da posição da variavel na memoria para o  register_cont.
+													- Atualiza tabela de variaveis com o novo registrador.
+													- Atualiza matriz de registradores.
+													- Incrementa contador;
+												- Se não tiver:
+													- STORE do register_cont para a posição da memória encontrada no vetor. ********
+													- Incrementa contador;
+													- LOAD da posição da variavel na memoria para o  register_cont.
+													- Atualiza tabela de variaveis com o novo registrador, retirando do antigo.
+													- Atualiza matriz de registradores.
+													- Incrementa contador;
+													- Verificar se register_cont é < 39;
+														- Se for:
+															- Incrementa register_cont;
+														- Se não for:
+															- Seta register_cont com 8;
+									- Verifica se o endereço base é menor que 255
+										- Se for:
+											- ADD do endereço base de v com registrador da variavel para result3; ********
+											- Incrementa contador
+										- Se não for:
+											- Verifica se o endereço base é menor que 65536
+												- Se for:
+													- SRVALUE do endereço base de v para o registrador vetor_base. ******
+													- Incrementa contador
+													- ADD do vetor_base com registrador da variavel para result3; ********
+													- Incrementa contador.
+												- Se não for:
+													- Deslocar os bits do endereço base de v para a direita, 16 bits.
+													- SRVALUE do deslocado para o result1. ******
+													- Incrementa contador.
+													- Deslocar os bits do endereço base de v para a esquerda, 16 bits.
+													- Fazer o endereço base de v  - deslocado.
+													- SRVALUE do resultado para o vetor_base. ******
+													- Incrementa contador.
+													- SHL do result1 com 4 para o result1. ******
+													- Incrementa contador.
+													- ADD do result1 com vetor_base para o vetor_base. ******
+													- Incrementa contador.
+													- ADD do vetor_base com registrador da variavel para result3; ********
+													- Incrementa contador.
+									- LOAD.R do valor de memoria localizado no result3 para result3; ********
+									- Incrementa contador.	
+								-Se for registrador:
+									- Procurar o temporario no result4 e result5.
+									- Verifica se o endereço base é menor que 256
+										- Se for:
+											- ADD do endereço base de v com result4,5 para result3; ********
+											- Incrementa contador
+										- Se não for:
+											- Verifica se o endereço base é menor que 65536
+												- Se for:
+													- SRVALUE do endereço base de v para o registrador vetor_base. ******
+													- Incrementa contador
+													- ADD do vetor_base com result4,5 para result3; ********
+													- Incrementa contador.
+												- Se não for:
+													- Deslocar os bits do endereço base de v para a direita, 16 bits.
+													- SRVALUE do deslocado para o result1. ******
+													- Incrementa contador.
+													- Deslocar os bits do endereço base de v para a esquerda, 16 bits.
+													- Fazer o endereço base de v  - deslocado.
+													- SRVALUE do resultado para o vetor_base. ******
+													- Incrementa contador.
+													- SHL do result1 com 4 para o result1. ******
+													- Incrementa contador.
+													- ADD do result1 com vetor_base para o vetor_base. ******
+													- Incrementa contador.
+													- ADD do vetor_base com result4,5 para result3; ********
+													- Incrementa contador.
+									- Sinaliza o registrador result1,result 4 ou 5 como ja uzado com 0.
+									- LOAD.R do valor de memoria localizado no result3 para result3; ********
+									- Incrementa contador.	
+							- Marca que a operação sera feita com o registrador.
+						- Se não for vetor:
+							-Verificar se tem um registrador atribuido a variavel;
+								- Se não tiver:
+									- Verifica se a pilha de registradores livres tem elementos.
+										- Se tiver:
+											- Desempilha o endereço de registrador livre.
+											- LOAD da posição da variavel na memoria para o  register_cont.******
+											- Atualiza tabela de variaveis com o novo registrador.
+											- Atualiza matriz de registradores.
+											- Incrementa contador;
+										- Se não tiver:
+											- STORE do register_cont para a posição da memória encontrada no vetor. ********
+											- Incrementa contador;
+											- LOAD da posição da variavel na memoria para o  register_cont.
+											- Atualiza tabela de variaveis com o novo registrador, retirando do antigo.
+											- Atualiza matriz de registradores.
+											- Incrementa contador;
+											- Verificar se register_cont é < 39;
+												- Se for:
+													- Incrementa register_cont;
+												- Se não for:
+													- Seta register_cont com 8;
+							- REGCOPY o registrador da variável para o result3. *******
+							- Incrementa contador.					
+							- Decrementa o valor do numero de ocorrencias da variavel na tabela
+							- Verifica se há ocorrencia da variável. (Se o numero de ocorrencias for maior que 0).
+								- Se não:
+									- STORE do registrador equivalente da variavel na posição de memoria. ******
+									- Incrementa contador.
+									- Empilha registrador livre.
+									- Atualiza tabela de variaveis.
+									- Atualiza matriz de registradores.
+				- Se o segundo operando for um registrador:
+					- Procurar o temporario no , result4 e result5.
+					- REGCOPY o registrador , 4, 5 para o result3. *******
+					- Incrementa contador.
+					- Sinaliza o registrador ,result 4 ou 5 como ja usado com 0.
+				- Se o segundo operando for um imediato:
+					- Se o imediato for menor que 256
+						- SRVALUE do imediato para o result3. ******
+						- Incrementa contador.
+					- Se não:
+						- Deslocar os bits para a direita, 16 bits.
+						- SRVALUE do deslocado para o result1. ******
+						- Incrementa contador.
+						- Deslocar os bits para a esquerda, 16 bits.
+						- Fazer o imediato - deslocado.
+						- SRVALUE do resultado para o result3. ******
+						- Incrementa contador.
+						- SHL do result1 com 16 para o result1. ******
+						- Incrementa contador.
+						- ADD do result1 com result3 para o result3. ******
+						- Incrementa contador.
+			- Verifica se $4 e $5 estão sendo utilizados. Seleciona um dos dois registradores.
+			- Marca numero do temporario  no registrador escolhido.
+			- Marca o Registrador como escolhido.
+			- OP $2 $3 Registrador********
+			- Incrementa contador. 			
+		- ASSIGN
+			- Verificar se o segundo operando não é o registrador RET
+				- Load_Operand(returnComponente(quad,1),2);
+				-
+- inicia no inicio da lista do codigo intermediario
+- loop (condição de parada = FUNCTION_DEF main)
+	- verifica cada tipo de "instrução"
+		-FUNCTION_DEF 
+			- LABEL com nome da função.
+			- argument_cont = 0;
+			- Zera a pilha de registradores livre.
+			- identificar todas as variaveis declaradas da "funcao" usando a variavel_contador.
+			- Criar uma tabela com variavel_contador posições.
+			- Inserir cada variavel na tabela por ordem de aparição, basta percorrer a tabela de simbolos, e colocar cada variavel que aparece que tem o mesmo escopo da funçaõ(nao decl de variavel, nem argumento de função).
+			- Atribuir o numero de aparições de cada variavel. (informação adquirida analisando a tabela de simbolos)
+			- A posição de cada variavel dessa tabela é o endereço de memória relativo. Por exemplo, se a variavel a estiver na posição 0 da tabela, então sua posição de memória relativa será 0.
+			- Cria uma matriz com registradores (seria posição do vetor, exemplo posição 0 é $0), o campo de endereço de memoria relativo a aquele registrador, e um campo chamado flag_utilização que determina se o registrador está usado ou não.
+			- Se o variavel_contador for maior que 32 (equivalente ao numero de registradores);
+				- Atribui aos primeiros 32 um valor de registrador, adiciona as posições de moria a cada registrador da matriz de registradores, marca uma flag_utilização como 1 dos registradores.
+			- Senão
+				- atribui a todos um valor de registrador(sequencialmente).
+				- Atualiza matriz de registradores.
+				- register_cont = variavel_contador + 7 ;
+			- PUSH.R com o variavel_contador. ********
+			- Incrementar o contador
+		- EQUAL, NOT EQUAL, LESS THAN, LESS OR EQUAL THEN, GREATER THEN, GREATER OR EQUAL THEN.
+			-Verificar se o primeiro operando é:
+				-Se o primeiro operando for variavel:
+					-Verificar se o primeiro operando for vetor;
+						-Se o primeiro operando for vetor:
+							- Verificar se o deslocamento é registrador, variavel ou imediato
+								- Se for imediato:
+									- Soma o imediato com a posição da memoria de v.
+									- LOAD do resultado da soma para result2; ********
+									- Incrementa contador
+								-Se for variavel:
+									-Verificar se tem um registrador atribuido a variavel;
+										- Se não tiver:
+											- Verifica se a pilha de registradores livres tem elementos.
+												- Se tiver:
+													- Desempilha o endereço de registrador livre.
+													- LOAD da posição da variavel na memoria para o  register_cont.
+													- Atualiza tabela de variaveis com o novo registrador.
+													- Atualiza matriz de registradores.
+													- Incrementa contador;
+												- Se não tiver:
+													- STORE do register_cont para a posição da memória encontrada no vetor. ********
+													- Incrementa contador;
+													- LOAD da posição da variavel na memoria para o  register_cont.
+													- Atualiza tabela de variaveis com o novo registrador, retirando do antigo.
+													- Atualiza matriz de registradores.
+													- Incrementa contador;
+													- Verificar se register_cont é < 39;
+														- Se for:
+															- Incrementa register_cont;
+														- Se não for:
+															- Seta register_cont com 8;
+									- Verifica se o endereço base é menor que 255
+										- Se for:
+											- ADD do endereço base de v com registrador da variavel para result2; ********
+											- Incrementa contador
+										- Se não for:
+											- Verifica se o endereço base é menor que 65536
+												- Se for:
+													- SRVALUE do endereço base de v para o registrador vetor_base. ******
+													- Incrementa contador
+													- ADD do vetor_base com registrador da variavel para result2; ********
+													- Incrementa contador.
+												- Se não for:
+													- Deslocar os bits do endereço base de v para a direita, 16 bits.
+													- SRVALUE do deslocado para o result1. ******
+													- Incrementa contador.
+													- Deslocar os bits do endereço base de v para a esquerda, 16 bits.
+													- Fazer o endereço base de v  - deslocado.
+													- SRVALUE do resultado para o vetor_base. ******
+													- Incrementa contador.
+													- SHL do result1 com 4 para o result1. ******
+													- Incrementa contador.
+													- ADD do result1 com vetor_base para o vetor_base. ******
+													- Incrementa contador.
+													- ADD do vetor_base com registrador da variavel para result2; ********
+													- Incrementa contador.
+									- LOAD.R do valor de memoria localizado no result2 para result2; ********
+									- Incrementa contador.	
+								-Se for registrador:
+									- Procurar o temporario no result4 e result5.
+									- Verifica se o endereço base é menor que 256
+										- Se for:
+											- ADD do endereço base de v com result4,5 para result2; ********
+											- Incrementa contador
+										- Se não for:
+											- Verifica se o endereço base é menor que 65536
+												- Se for:
+													- SRVALUE do endereço base de v para o registrador vetor_base. ******
+													- Incrementa contador
+													- ADD do vetor_base com result4,5 para result2; ********
+													- Incrementa contador.
+												- Se não for:
+													- Deslocar os bits do endereço base de v para a direita, 4 bits.
+													- SRVALUE do deslocado para o result1. ******
+													- Incrementa contador.
+													- Deslocar os bits do endereço base de v para a esquerda, 4 bits.
+													- Fazer o endereço base de v  - deslocado.
+													- SRVALUE do resultado para o vetor_base. ******
+													- Incrementa contador.
+													- SHL do result1 com 4 para o result1. ******
+													- Incrementa contador.
+													- ADD do result1 com vetor_base para o vetor_base. ******
+													- Incrementa contador.
+													- ADD do vetor_base com result4,5 para result2; ********
+													- Incrementa contador.
+									- Sinaliza o registrador result1,result 4 ou 5 como ja uzado com 0.
+									- LOAD.R do valor de memoria localizado no result2 para result2; ********
+									- Incrementa contador.	
+							- Marca que a operação sera feita com o registrador.
+						- Se não for vetor:
+							-Verificar se tem um registrador atribuido a variavel;
+								- Se não tiver:
+									- Verifica se a pilha de registradores livres tem elementos.
+										- Se tiver:
+											- Desempilha o endereço de registrador livre.
+											- LOAD da posição da variavel na memoria para o  register_cont.******
+											- Atualiza tabela de variaveis com o novo registrador.
+											- Atualiza matriz de registradores.
+											- Incrementa contador;
+										- Se não tiver:
+											- STORE do register_cont para a posição da memória encontrada no vetor. ********
+											- Incrementa contador;
+											- LOAD da posição da variavel na memoria para o  register_cont.
+											- Atualiza tabela de variaveis com o novo registrador, retirando do antigo.
+											- Atualiza matriz de registradores.
+											- Incrementa contador;
+											- Verificar se register_cont é < 39;
+												- Se for:
+													- Incrementa register_cont;
+												- Se não for:
+													- Seta register_cont com 8;
+							- REGCOPY o registrador da variável para o result2. *******
+							- Incrementa contador.					
+							- Decrementa o valor do numero de ocorrencias da variavel na tabela
+							- Verifica se há ocorrencia da variável. (Se o numero de ocorrencias for maior que 0).
+								- Se não:
+									- STORE do registrador equivalente da variavel na posição de memoria. ******
+									- Incrementa contador.
+									- Empilha registrador livre.
+									- Atualiza tabela de variaveis.
+									- Atualiza matriz de registradores.
+				- Se o primeiro operando for um registrador:
+					- Procurar o temporario no result4 e result5.
+					- REGCOPY o registrador , 4, 5 para o result2. *******
+					- Incrementa contador.
+					- Sinaliza o registrador ,result 4 ou 5 como ja usado com 0.
+				- Se o primeiro operando for um imediato:
+					- Se o imediato for menor que 65536
+						- SRVALUE do imediato para o result2. ******
+						- Incrementa contador.
+					- Se não:
+						- Deslocar os bits para a direita, 16 bits.
+						- SRVALUE do deslocado para o result1. ******
+						- Incrementa contador.
+						- Deslocar os bits para a esquerda, 16 bits.
+						- Fazer o imediato - deslocado.
+						- SRVALUE do resultado para o result2. ******
+						- Incrementa contador.
+						- SHL do result1 com 16 para o result1. ******
+						- Incrementa contador.
+						- ADD do result1 com result2 para o result2. ******
+						- Incrementa contador.
+			-Verificar se o segundo operando é:
+				-Se o segundo operando for variavel:
+					-Verificar se o segundo operando for vetor;
+						-Se o segundo operando for vetor:
+							- Verificar se o deslocamento é registrador, variavel ou imediato
+								- Se for imediato:
+									- Soma o imediato com a posição da memoria de v.
+									- LOAD do resultado da soma para result3; ********
+									- Incrementa contador
+								-Se for variavel:
+									-Verificar se tem um registrador atribuido a variavel;
+										- Se não tiver:
+											- Verifica se a pilha de registradores livres tem elementos.
+												- Se tiver:
+													- Desempilha o endereço de registrador livre.
+													- LOAD da posição da variavel na memoria para o  register_cont.
+													- Atualiza tabela de variaveis com o novo registrador.
+													- Atualiza matriz de registradores.
+													- Incrementa contador;
+												- Se não tiver:
+													- STORE do register_cont para a posição da memória encontrada no vetor. ********
+													- Incrementa contador;
+													- LOAD da posição da variavel na memoria para o  register_cont.
+													- Atualiza tabela de variaveis com o novo registrador, retirando do antigo.
+													- Atualiza matriz de registradores.
+													- Incrementa contador;
+													- Verificar se register_cont é < 39;
+														- Se for:
+															- Incrementa register_cont;
+														- Se não for:
+															- Seta register_cont com 8;
+									- Verifica se o endereço base é menor que 255
+										- Se for:
+											- ADD do endereço base de v com registrador da variavel para result3; ********
+											- Incrementa contador
+										- Se não for:
+											- Verifica se o endereço base é menor que 65536
+												- Se for:
+													- SRVALUE do endereço base de v para o registrador vetor_base. ******
+													- Incrementa contador
+													- ADD do vetor_base com registrador da variavel para result3; ********
+													- Incrementa contador.
+												- Se não for:
+													- Deslocar os bits do endereço base de v para a direita, 4 bits.
+													- SRVALUE do deslocado para o result1. ******
+													- Incrementa contador.
+													- Deslocar os bits do endereço base de v para a esquerda, 4 bits.
+													- Fazer o endereço base de v  - deslocado.
+													- SRVALUE do resultado para o vetor_base. ******
+													- Incrementa contador.
+													- SHL do result1 com 4 para o result1. ******
+													- Incrementa contador.
+													- ADD do result1 com vetor_base para o vetor_base. ******
+													- Incrementa contador.
+													- ADD do vetor_base com registrador da variavel para result3; ********
+													- Incrementa contador.
+									- LOAD.R do valor de memoria localizado no result3 para result3; ********
+									- Incrementa contador.	
+								-Se for registrador:
+									- Procurar o temporario no result4 e result5.
+									- Verifica se o endereço base é menor que 256
+										- Se for:
+											- ADD do endereço base de v com result4,5 para result3; ********
+											- Incrementa contador
+										- Se não for:
+											- Verifica se o endereço base é menor que 65536
+												- Se for:
+													- SRVALUE do endereço base de v para o registrador vetor_base. ******
+													- Incrementa contador
+													- ADD do vetor_base com result4,5 para result3; ********
+													- Incrementa contador.
+												- Se não for:
+													- Deslocar os bits do endereço base de v para a direita, 16 bits.
+													- SRVALUE do deslocado para o result1. ******
+													- Incrementa contador.
+													- Deslocar os bits do endereço base de v para a esquerda, 16 bits.
+													- Fazer o endereço base de v  - deslocado.
+													- SRVALUE do resultado para o vetor_base. ******
+													- Incrementa contador.
+													- SHL do result1 com 16 para o result1. ******
+													- Incrementa contador.
+													- ADD do result1 com vetor_base para o vetor_base. ******
+													- Incrementa contador.
+													- ADD do vetor_base com result4,5 para result3; ********
+													- Incrementa contador.
+									- Sinaliza o registrador result1,result 4 ou 5 como ja uzado com 0.
+									- LOAD.R do valor de memoria localizado no result3 para result3; ********
+									- Incrementa contador.	
+							- Marca que a operação sera feita com o registrador.
+						- Se não for vetor:
+							-Verificar se tem um registrador atribuido a variavel;
+								- Se não tiver:
+									- Verifica se a pilha de registradores livres tem elementos.
+										- Se tiver:
+											- Desempilha o endereço de registrador livre.
+											- LOAD da posição da variavel na memoria para o  register_cont.******
+											- Atualiza tabela de variaveis com o novo registrador.
+											- Atualiza matriz de registradores.
+											- Incrementa contador;
+										- Se não tiver:
+											- STORE do register_cont para a posição da memória encontrada no vetor. ********
+											- Incrementa contador;
+											- LOAD da posição da variavel na memoria para o  register_cont.
+											- Atualiza tabela de variaveis com o novo registrador, retirando do antigo.
+											- Atualiza matriz de registradores.
+											- Incrementa contador;
+											- Verificar se register_cont é < 39;
+												- Se for:
+													- Incrementa register_cont;
+												- Se não for:
+													- Seta register_cont com 8;
+							- REGCOPY o registrador da variável para o result3. *******
+							- Incrementa contador.					
+							- Decrementa o valor do numero de ocorrencias da variavel na tabela
+							- Verifica se há ocorrencia da variável. (Se o numero de ocorrencias for maior que 0).
+								- Se não:
+									- STORE do registrador equivalente da variavel na posição de memoria. ******
+									- Incrementa contador.
+									- Empilha registrador livre.
+									- Atualiza tabela de variaveis.
+									- Atualiza matriz de registradores.
+				- Se o segundo operando for um registrador:
+					- Procurar o temporario no , result4 e result5.
+					- REGCOPY o registrador , 4, 5 para o result3. *******
+					- Incrementa contador.
+					- Sinaliza o registrador ,result 4 ou 5 como ja usado com 0.
+				- Se o segundo operando for um imediato:
+					- Se o imediato for menor que 65536
+						- SRVALUE do imediato para o result3. ******
+						- Incrementa contador.
+					- Se não:
+						- Deslocar os bits para a direita, 16 bits.
+						- SRVALUE do deslocado para o result1. ******
+						- Incrementa contador.
+						- Deslocar os bits para a esquerda, 16 bits.
+						- Fazer o imediato - deslocado.
+						- SRVALUE do resultado para o result3. ******
+						- Incrementa contador.
+						- SHL do result1 com 16 para o result1. ******
+						- Incrementa contador.
+						- ADD do result1 com result3 para o result3. ******
+						- Incrementa contador.
+			- Usa um Jump relacionado a operação, para a label do proximo nó que deve ser if_false. ********
+			- Incrementa contador.
+		- LABEL
+			- loop que começa do registrador 8, condição de parada é quando registrador for maior que 39.
+				- Se a flag_utilização do registrador $x for 1
+					- STORE, $x, posição de memória na tabela.
+					- Incrementa contador.
+					- Coloca flag_utilização do $x como 0.
+			- CRIA nó com a label.
+			- Zera a pilha de registradores livre.
+			- Coloca o register_cont = 8;
+			- loop que começa na variavel 0 da tabela de memoria, condição de parada é o contador_variaveis
+				- verifica se existe aparições.
+					- Atribui o registrador register_cont.
+					- Atualiza tabela de registradores.
+					- Coloca flag_utilização $register_cont como 1;
+					- LOAD variavel $register_cont
+					- Incrementa contador.
+					- register_cont++;
+		- GOTO
+			- loop que começa do registrador 8, condição de parada é quando registrador for maior que 39.
+				- Se a flag_utilização do registrador $x for 1
+					- STORE, $x, posição de memória na tabela.
+					- Incrementa contador.
+					- Coloca flag_utilização do $x como 0.
+			- JUMP para a label.*******
+			- Incrementa contador.
+			- Zera a pilha de registradores livre.
+			- Coloca o register_cont = 8;
+			- loop que começa na variavel 0 da tabela de memoria, condição de parada é o contador_variaveis
+				- verifica se existe aparições.
+					- Atribui o registrador register_cont.
+					- Atualiza tabela de registradores.
+					- Coloca flag_utilização $register_cont como 1;
+					- LOAD variavel $register_cont
+					- Incrementa contador.
+					- register_cont++;
+		- ARGUMENT
+			-Verificar se o primeiro operando é:
+				-Se o primeiro operando for variavel:
+					-Verificar se o primeiro operando for vetor;
+						-Se o primeiro operando for vetor:
+							- Se ele possuir uma posição.
+								- Verificar se o deslocamento é registrador, variavel ou imediato
+									- Se for imediato:
+										- Soma o imediato com a posição da memoria de v.
+										- LOAD do resultado da soma para result2; ********
+										- Incrementa contador
+									-Se for variavel:
+										-Verificar se tem um registrador atribuido a variavel;
+											- Se não tiver:
+												- Verifica se a pilha de registradores livres tem elementos.
+													- Se tiver:
+														- Desempilha o endereço de registrador livre.
+														- LOAD da posição da variavel na memoria para o  register_cont.
+														- Atualiza tabela de variaveis com o novo registrador.
+														- Atualiza matriz de registradores.
+														- Incrementa contador;
+													- Se não tiver:
+														- STORE do register_cont para a posição da memória encontrada no vetor. ********
+														- Incrementa contador;
+														- LOAD da posição da variavel na memoria para o  register_cont.
+														- Atualiza tabela de variaveis com o novo registrador, retirando do antigo.
+														- Atualiza matriz de registradores.
+														- Incrementa contador;
+														- Verificar se register_cont é < 39;
+															- Se for:
+																- Incrementa register_cont;
+															- Se não for:
+																- Seta register_cont com 8;
+										- Verifica se o endereço base é menor que 255
+											- Se for:
+												- ADD do endereço base de v com registrador da variavel para result2; ********
+												- Incrementa contador
+											- Se não for:
+												- Verifica se o endereço base é menor que 65536
+													- Se for:
+														- SRVALUE do endereço base de v para o registrador vetor_base. ******
+														- Incrementa contador
+														- ADD do vetor_base com registrador da variavel para result2; ********
+														- Incrementa contador.
+													- Se não for:
+														- Deslocar os bits do endereço base de v para a direita, 16 bits.
+														- SRVALUE do deslocado para o result1. ******
+														- Incrementa contador.
+														- Deslocar os bits do endereço base de v para a esquerda, 16 bits.
+														- Fazer o endereço base de v  - deslocado.
+														- SRVALUE do resultado para o vetor_base. ******
+														- Incrementa contador.
+														- SHL do result1 com 4 para o result1. ******
+														- Incrementa contador.
+														- ADD do result1 com vetor_base para o vetor_base. ******
+														- Incrementa contador.
+														- ADD do vetor_base com registrador da variavel para result2; ********
+														- Incrementa contador.
+										- LOAD.R do valor de memoria localizado no result2 para result2; ********
+										- Incrementa contador.	
+									-Se for registrador:
+										- Procurar o temporario no result4 e result5.
+										- Verifica se o endereço base é menor que 256
+											- Se for:
+												- ADD do endereço base de v com result4,5 para result2; ********
+												- Incrementa contador
+											- Se não for:
+												- Verifica se o endereço base é menor que 65536
+													- Se for:
+														- SRVALUE do endereço base de v para o registrador vetor_base. ******
+														- Incrementa contador
+														- ADD do vetor_base com result4,5 para result2; ********
+														- Incrementa contador.
+													- Se não for:
+														- Deslocar os bits do endereço base de v para a direita, 16 bits.
+														- SRVALUE do deslocado para o result1. ******
+														- Incrementa contador.
+														- Deslocar os bits do endereço base de v para a esquerda, 16 bits.
+														- Fazer o endereço base de v  - deslocado.
+														- SRVALUE do resultado para o vetor_base. ******
+														- Incrementa contador.
+														- SHL do result1 com 4 para o result1. ******
+														- Incrementa contador.
+														- ADD do result1 com vetor_base para o vetor_base. ******
+														- Incrementa contador.
+														- ADD do vetor_base com result4,5 para result2; ********
+														- Incrementa contador.
+										- Sinaliza o registrador result1,result 4 ou 5 como ja uzado com 0.
+										- LOAD.R do valor de memoria localizado no result2 para result2; ********
+										- Incrementa contador.	
+								- STORE do result2 para argument_cont+variavel_contador.
+								- Incrementa contador.
+								- Incrementa argument_cont; 
+							- Se não possuir uma posição.
+								-	loop , condição de parada é quando alcançar o size do vetor.
+									- LOAD (endereço base de v + i) para o result2
+									- Incrementa contador.
+									- STORE do result2 para argument_cont+variavel_contador.
+									- Incrementa contador.
+									- Incrementa argument_cont;
+						- Se não for vetor:
+							-Verificar se tem um registrador atribuido a variavel;
+								- Se não tiver:
+									- Verifica se a pilha de registradores livres tem elementos.
+										- Se tiver:
+											- Desempilha o endereço de registrador livre.
+											- LOAD da posição da variavel na memoria para o  register_cont.******
+											- Atualiza tabela de variaveis com o novo registrador.
+											- Atualiza matriz de registradores.
+											- Incrementa contador;
+										- Se não tiver:
+											- STORE do register_cont para a posição da memória encontrada no vetor. ********
+											- Incrementa contador;
+											- LOAD da posição da variavel na memoria para o  register_cont.
+											- Atualiza tabela de variaveis com o novo registrador, retirando do antigo.
+											- Atualiza matriz de registradores.
+											- Incrementa contador;
+											- Verificar se register_cont é < 39;
+												- Se for:
+													- Incrementa register_cont;
+												- Se não for:
+													- Seta register_cont com 8;
+							- REGCOPY o registrador da variável para o result2. *******
+							- Incrementa contador.					
+							- Decrementa o valor do numero de ocorrencias da variavel na tabela
+							- Verifica se há ocorrencia da variável. (Se o numero de ocorrencias for maior que 0).
+								- Se não:
+									- STORE do registrador equivalente da variavel na posição de memoria. ******
+									- Incrementa contador.
+									- Empilha registrador livre.
+									- Atualiza tabela de variaveis.
+									- Atualiza matriz de registradores.
+							- STORE do result2 para argument_cont+variavel_contador.
+							- Incrementa contador.
+							- Incrementa argument_cont; 
+				- Se o primeiro operando for um registrador:
+					- Procurar o temporario no result4 e result5.
+					- REGCOPY o registrador , 4, 5 para o result2. *******
+					- Incrementa contador.
+					- Sinaliza o registrador ,result 4 ou 5 como ja usado com 0.
+					- STORE do result2 para argument_cont+variavel_contador.
+					- Incrementa contador.
+					- Incrementa argument_cont; 
+				- Se o primeiro operando for um imediato:
+					- Se o imediato for menor que 256
+						- SRVALUE do imediato para o result2. ******
+						- Incrementa contador.
+					- Se não:
+						- Deslocar os bits para a direita, 16 bits.
+						- SRVALUE do deslocado para o result1. ******
+						- Incrementa contador.
+						- Deslocar os bits para a esquerda, 16 bits.
+						- Fazer o imediato - deslocado.
+						- SRVALUE do resultado para o result2. ******
+						- Incrementa contador.
+						- SHL do result1 com 16 para o result1. ******
+						- Incrementa contador.
+						- ADD do result1 com result2 para o result2. ******
+						- Incrementa contador.
+					- STORE do result2 para argument_cont+variavel_contador.
+					- Incrementa contador.
+					- Incrementa argument_cont; 
+		- FUNCAL
+			- Zera o argument_cont.
+			- loop que começa do registrador 8, condição de parada é quando registrador for maior que 39.
+				- Se a flag_utilização do registrador $x for 1
+					- STORE, $x, posição de memória na tabela.
+					- Incrementa contador.
+					- Coloca flag_utilização do $x como 0.
+			- PUSH.PC(contador+2).
+			- Incrementa contador.
+			- JUMP para a label com o nome da funcao.*******
+			- Incrementa contador.
+			- Zera a pilha de registradores livre.
+			- Coloca o register_cont = 8;
+			- loop que começa na variavel 0 da tabela de memoria, condição de parada é o contador_variaveis
+				- verifica se existe aparições.
+					- Atribui o registrador register_cont.
+					- Atualiza tabela de registradores.
+					- Coloca flag_utilização $register_cont como 1;
+					- LOAD variavel $register_cont
+					- Incrementa contador.
+					- register_cont++;
+		- RET
+			-Verificar se o primeiro operando é:
+				-Se o primeiro operando for variavel:
+					-Verificar se o primeiro operando for vetor;
+						-Se o primeiro operando for vetor:
+							- Verificar se o deslocamento é registrador, variavel ou imediato
+								- Se for imediato:
+									- Soma o imediato com a posição da memoria de v.
+									- LOAD do resultado da soma para result2; ********
+									- Incrementa contador
+								-Se for variavel:
+									-Verificar se tem um registrador atribuido a variavel;
+										- Se não tiver:
+											- Verifica se a pilha de registradores livres tem elementos.
+												- Se tiver:
+													- Desempilha o endereço de registrador livre.
+													- LOAD da posição da variavel na memoria para o  register_cont.
+													- Atualiza tabela de variaveis com o novo registrador.
+													- Atualiza matriz de registradores.
+													- Incrementa contador;
+												- Se não tiver:
+													- STORE do register_cont para a posição da memória encontrada no vetor. ********
+													- Incrementa contador;
+													- LOAD da posição da variavel na memoria para o  register_cont.
+													- Atualiza tabela de variaveis com o novo registrador, retirando do antigo.
+													- Atualiza matriz de registradores.
+													- Incrementa contador;
+													- Verificar se register_cont é < 39;
+														- Se for:
+															- Incrementa register_cont;
+														- Se não for:
+															- Seta register_cont com 8;
+									- Verifica se o endereço base é menor que 255
+										- Se for:
+											- ADD do endereço base de v com registrador da variavel para result2; ********
+											- Incrementa contador
+										- Se não for:
+											- Verifica se o endereço base é menor que 65536
+												- Se for:
+													- SRVALUE do endereço base de v para o registrador vetor_base. ******
+													- Incrementa contador
+													- ADD do vetor_base com registrador da variavel para result2; ********
+													- Incrementa contador.
+												- Se não for:
+													- Deslocar os bits do endereço base de v para a direita, 16 bits.
+													- SRVALUE do deslocado para o result1. ******
+													- Incrementa contador.
+													- Deslocar os bits do endereço base de v para a esquerda, 16 bits.
+													- Fazer o endereço base de v  - deslocado.
+													- SRVALUE do resultado para o vetor_base. ******
+													- Incrementa contador.
+													- SHL do result1 com 4 para o result1. ******
+													- Incrementa contador.
+													- ADD do result1 com vetor_base para o vetor_base. ******
+													- Incrementa contador.
+													- ADD do vetor_base com registrador da variavel para result2; ********
+													- Incrementa contador.
+									- LOAD.R do valor de memoria localizado no result2 para result2; ********
+									- Incrementa contador.	
+								-Se for registrador:
+									- Procurar o temporario no result4 e result5.
+									- Verifica se o endereço base é menor que 256
+										- Se for:
+											- ADD do endereço base de v com result4,5 para result2; ********
+											- Incrementa contador
+										- Se não for:
+											- Verifica se o endereço base é menor que 65536
+												- Se for:
+													- SRVALUE do endereço base de v para o registrador vetor_base. ******
+													- Incrementa contador
+													- ADD do vetor_base com result4,5 para result2; ********
+													- Incrementa contador.
+												- Se não for:
+													- Deslocar os bits do endereço base de v para a direita, 16 bits.
+													- SRVALUE do deslocado para o result1. ******
+													- Incrementa contador.
+													- Deslocar os bits do endereço base de v para a esquerda, 16 bits.
+													- Fazer o endereço base de v  - deslocado.
+													- SRVALUE do resultado para o vetor_base. ******
+													- Incrementa contador.
+													- SHL do result1 com 4 para o result1. ******
+													- Incrementa contador.
+													- ADD do result1 com vetor_base para o vetor_base. ******
+													- Incrementa contador.
+													- ADD do vetor_base com result4,5 para result2; ********
+													- Incrementa contador.
+									- Sinaliza o registrador result1,result 4 ou 5 como ja uzado com 0.
+									- LOAD.R do valor de memoria localizado no result2 para result2; ********
+									- Incrementa contador.	
+							- Marca que a operação sera feita com o registrador.
+						- Se não for vetor:
+							-Verificar se tem um registrador atribuido a variavel;
+								- Se não tiver:
+									- Verifica se a pilha de registradores livres tem elementos.
+										- Se tiver:
+											- Desempilha o endereço de registrador livre.
+											- LOAD da posição da variavel na memoria para o  register_cont.******
+											- Atualiza tabela de variaveis com o novo registrador.
+											- Atualiza matriz de registradores.
+											- Incrementa contador;
+										- Se não tiver:
+											- STORE do register_cont para a posição da memória encontrada no vetor. ********
+											- Incrementa contador;
+											- LOAD da posição da variavel na memoria para o  register_cont.
+											- Atualiza tabela de variaveis com o novo registrador, retirando do antigo.
+											- Atualiza matriz de registradores.
+											- Incrementa contador;
+											- Verificar se register_cont é < 39;
+												- Se for:
+													- Incrementa register_cont;
+												- Se não for:
+													- Seta register_cont com 8;
+							- REGCOPY o registrador da variável para o result2. *******
+							- Incrementa contador.					
+							- Decrementa o valor do numero de ocorrencias da variavel na tabela
+							- Verifica se há ocorrencia da variável. (Se o numero de ocorrencias for maior que 0).
+								- Se não:
+									- STORE do registrador equivalente da variavel na posição de memoria. ******
+									- Incrementa contador.
+									- Empilha registrador livre.
+									- Atualiza tabela de variaveis.
+									- Atualiza matriz de registradores.
+				- Se o primeiro operando for um registrador:
+					- Procurar o temporario no result4 e result5.
+					- REGCOPY o registrador , 4, 5 para o result2. *******
+					- Incrementa contador.
+					- Sinaliza o registrador ,result 4 ou 5 como ja usado com 0.
+				- Se o primeiro operando for um imediato:
+					- Se o imediato for menor que 256
+						- SRVALUE do imediato para o result2. ******
+						- Incrementa contador.
+					- Se não:
+						- Deslocar os bits para a direita, 16 bits.
+						- SRVALUE do deslocado para o result1. ******
+						- Incrementa contador.
+						- Deslocar os bits para a esquerda, 16 bits.
+						- Fazer o imediato - deslocado.
+						- SRVALUE do resultado para o result2. ******
+						- Incrementa contador.
+						- SHL do result1 com 16 para o result1. ******
+						- Incrementa contador.
+						- ADD do result1 com result2 para o result2. ******
+						- Incrementa contador.
+			- REGCOPY do result2 para return.
+			- Incrementa contador.
+			- POP.R
+			- Incrementa contador.
+			- POP.PC
+			- Incrementa contador.
+		- IF_FALSE
+			- Pula para o próximo nó.
+		- ADD,SUB,DIV,MULT, SHR, SHL.
+			-Verificar se o primeiro operando é:
+				-Se o primeiro operando for variavel:
+					-Verificar se o primeiro operando for vetor;
+						-Se o primeiro operando for vetor:
+							- Verificar se o deslocamento é registrador, variavel ou imediato
+								- Se for imediato:
+									- Soma o imediato com a posição da memoria de v.
+									- LOAD do resultado da soma para result2; ********
+									- Incrementa contador
+								-Se for variavel:
+									-Verificar se tem um registrador atribuido a variavel;
+										- Se não tiver:
+											- Verifica se a pilha de registradores livres tem elementos.
+												- Se tiver:
+													- Desempilha o endereço de registrador livre.
+													- LOAD da posição da variavel na memoria para o  register_cont.
+													- Atualiza tabela de variaveis com o novo registrador.
+													- Atualiza matriz de registradores.
+													- Incrementa contador;
+												- Se não tiver:
+													- STORE do register_cont para a posição da memória encontrada no vetor. ********
+													- Incrementa contador;
+													- LOAD da posição da variavel na memoria para o  register_cont.
+													- Atualiza tabela de variaveis com o novo registrador, retirando do antigo.
+													- Atualiza matriz de registradores.
+													- Incrementa contador;
+													- Verificar se register_cont é < 39;
+														- Se for:
+															- Incrementa register_cont;
+														- Se não for:
+															- Seta register_cont com 8;
+									- Verifica se o endereço base é menor que 255
+										- Se for:
+											- ADD do endereço base de v com registrador da variavel para result2; ********
+											- Incrementa contador
+										- Se não for:
+											- Verifica se o endereço base é menor que 65536
+												- Se for:
+													- SRVALUE do endereço base de v para o registrador vetor_base. ******
+													- Incrementa contador
+													- ADD do vetor_base com registrador da variavel para result2; ********
+													- Incrementa contador.
+												- Se não for:
+													- Deslocar os bits do endereço base de v para a direita, 16 bits.
+													- SRVALUE do deslocado para o result1. ******
+													- Incrementa contador.
+													- Deslocar os bits do endereço base de v para a esquerda, 16 bits.
+													- Fazer o endereço base de v  - deslocado.
+													- SRVALUE do resultado para o vetor_base. ******
+													- Incrementa contador.
+													- SHL do result1 com 4 para o result1. ******
+													- Incrementa contador.
+													- ADD do result1 com vetor_base para o vetor_base. ******
+													- Incrementa contador.
+													- ADD do vetor_base com registrador da variavel para result2; ********
+													- Incrementa contador.
+									- LOAD.R do valor de memoria localizado no result2 para result2; ********
+									- Incrementa contador.	
+								-Se for registrador:
+									- Procurar o temporario no result4 e result5.
+									- Verifica se o endereço base é menor que 256
+										- Se for:
+											- ADD do endereço base de v com result4,5 para result2; ********
+											- Incrementa contador
+										- Se não for:
+											- Verifica se o endereço base é menor que 65536
+												- Se for:
+													- SRVALUE do endereço base de v para o registrador vetor_base. ******
+													- Incrementa contador
+													- ADD do vetor_base com result4,5 para result2; ********
+													- Incrementa contador.
+												- Se não for:
+													- Deslocar os bits do endereço base de v para a direita, 16 bits.
+													- SRVALUE do deslocado para o result1. ******
+													- Incrementa contador.
+													- Deslocar os bits do endereço base de v para a esquerda, 16 bits.
+													- Fazer o endereço base de v  - deslocado.
+													- SRVALUE do resultado para o vetor_base. ******
+													- Incrementa contador.
+													- SHL do result1 com 4 para o result1. ******
+													- Incrementa contador.
+													- ADD do result1 com vetor_base para o vetor_base. ******
+													- Incrementa contador.
+													- ADD do vetor_base com result4,5 para result2; ********
+													- Incrementa contador.
+									- Sinaliza o registrador result1,result 4 ou 5 como ja uzado com 0.
+									- LOAD.R do valor de memoria localizado no result2 para result2; ********
+									- Incrementa contador.	
+							- Marca que a operação sera feita com o registrador.
+						- Se não for vetor:
+							-Verificar se tem um registrador atribuido a variavel;
+								- Se não tiver:
+									- Verifica se a pilha de registradores livres tem elementos.
+										- Se tiver:
+											- Desempilha o endereço de registrador livre.
+											- LOAD da posição da variavel na memoria para o  register_cont.******
+											- Atualiza tabela de variaveis com o novo registrador.
+											- Atualiza matriz de registradores.
+											- Incrementa contador;
+										- Se não tiver:
+											- STORE do register_cont para a posição da memória encontrada no vetor. ********
+											- Incrementa contador;
+											- LOAD da posição da variavel na memoria para o  register_cont.
+											- Atualiza tabela de variaveis com o novo registrador, retirando do antigo.
+											- Atualiza matriz de registradores.
+											- Incrementa contador;
+											- Verificar se register_cont é < 39;
+												- Se for:
+													- Incrementa register_cont;
+												- Se não for:
+													- Seta register_cont com 8;
+							- REGCOPY o registrador da variável para o result2. *******
+							- Incrementa contador.					
+							- Decrementa o valor do numero de ocorrencias da variavel na tabela
+							- Verifica se há ocorrencia da variável. (Se o numero de ocorrencias for maior que 0).
+								- Se não:
+									- STORE do registrador equivalente da variavel na posição de memoria. ******
+									- Incrementa contador.
+									- Empilha registrador livre.
+									- Atualiza tabela de variaveis.
+									- Atualiza matriz de registradores.
+				- Se o primeiro operando for um registrador:
+					- Procurar o temporario no result4 e result5.
+					- REGCOPY o registrador , 4, 5 para o result2. *******
+					- Incrementa contador.
+					- Sinaliza o registrador ,result 4 ou 5 como ja usado com 0.
+				- Se o primeiro operando for um imediato:
+					- Se o imediato for menor que 256
+						- SRVALUE do imediato para o result2. ******
+						- Incrementa contador.
+					- Se não:
+						- Deslocar os bits para a direita, 16 bits.
+						- SRVALUE do deslocado para o result1. ******
+						- Incrementa contador.
+						- Deslocar os bits para a esquerda, 16 bits.
+						- Fazer o imediato - deslocado.
+						- SRVALUE do resultado para o result2. ******
+						- Incrementa contador.
+						- SHL do result1 com 16 para o result1. ******
+						- Incrementa contador.
+						- ADD do result1 com result2 para o result2. ******
+						- Incrementa contador.
+			-Verificar se o segundo operando é:
+				-Se o segundo operando for variavel:
+					-Verificar se o segundo operando for vetor;
+						-Se o segundo operando for vetor:
+							- Verificar se o deslocamento é registrador, variavel ou imediato
+								- Se for imediato:
+									- Soma o imediato com a posição da memoria de v.
+									- LOAD do resultado da soma para result3; ********
+									- Incrementa contador
+								-Se for variavel:
+									-Verificar se tem um registrador atribuido a variavel;
+										- Se não tiver:
+											- Verifica se a pilha de registradores livres tem elementos.
+												- Se tiver:
+													- Desempilha o endereço de registrador livre.
+													- LOAD da posição da variavel na memoria para o  register_cont.
+													- Atualiza tabela de variaveis com o novo registrador.
+													- Atualiza matriz de registradores.
+													- Incrementa contador;
+												- Se não tiver:
+													- STORE do register_cont para a posição da memória encontrada no vetor. ********
+													- Incrementa contador;
+													- LOAD da posição da variavel na memoria para o  register_cont.
+													- Atualiza tabela de variaveis com o novo registrador, retirando do antigo.
+													- Atualiza matriz de registradores.
+													- Incrementa contador;
+													- Verificar se register_cont é < 39;
+														- Se for:
+															- Incrementa register_cont;
+														- Se não for:
+															- Seta register_cont com 8;
+									- Verifica se o endereço base é menor que 255
+										- Se for:
+											- ADD do endereço base de v com registrador da variavel para result3; ********
+											- Incrementa contador
+										- Se não for:
+											- Verifica se o endereço base é menor que 65536
+												- Se for:
+													- SRVALUE do endereço base de v para o registrador vetor_base. ******
+													- Incrementa contador
+													- ADD do vetor_base com registrador da variavel para result3; ********
+													- Incrementa contador.
+												- Se não for:
+													- Deslocar os bits do endereço base de v para a direita, 16 bits.
+													- SRVALUE do deslocado para o result1. ******
+													- Incrementa contador.
+													- Deslocar os bits do endereço base de v para a esquerda, 16 bits.
+													- Fazer o endereço base de v  - deslocado.
+													- SRVALUE do resultado para o vetor_base. ******
+													- Incrementa contador.
+													- SHL do result1 com 4 para o result1. ******
+													- Incrementa contador.
+													- ADD do result1 com vetor_base para o vetor_base. ******
+													- Incrementa contador.
+													- ADD do vetor_base com registrador da variavel para result3; ********
+													- Incrementa contador.
+									- LOAD.R do valor de memoria localizado no result3 para result3; ********
+									- Incrementa contador.	
+								-Se for registrador:
+									- Procurar o temporario no result4 e result5.
+									- Verifica se o endereço base é menor que 256
+										- Se for:
+											- ADD do endereço base de v com result4,5 para result3; ********
+											- Incrementa contador
+										- Se não for:
+											- Verifica se o endereço base é menor que 65536
+												- Se for:
+													- SRVALUE do endereço base de v para o registrador vetor_base. ******
+													- Incrementa contador
+													- ADD do vetor_base com result4,5 para result3; ********
+													- Incrementa contador.
+												- Se não for:
+													- Deslocar os bits do endereço base de v para a direita, 16 bits.
+													- SRVALUE do deslocado para o result1. ******
+													- Incrementa contador.
+													- Deslocar os bits do endereço base de v para a esquerda, 16 bits.
+													- Fazer o endereço base de v  - deslocado.
+													- SRVALUE do resultado para o vetor_base. ******
+													- Incrementa contador.
+													- SHL do result1 com 4 para o result1. ******
+													- Incrementa contador.
+													- ADD do result1 com vetor_base para o vetor_base. ******
+													- Incrementa contador.
+													- ADD do vetor_base com result4,5 para result3; ********
+													- Incrementa contador.
+									- Sinaliza o registrador result1,result 4 ou 5 como ja uzado com 0.
+									- LOAD.R do valor de memoria localizado no result3 para result3; ********
+									- Incrementa contador.	
+							- Marca que a operação sera feita com o registrador.
+						- Se não for vetor:
+							-Verificar se tem um registrador atribuido a variavel;
+								- Se não tiver:
+									- Verifica se a pilha de registradores livres tem elementos.
+										- Se tiver:
+											- Desempilha o endereço de registrador livre.
+											- LOAD da posição da variavel na memoria para o  register_cont.******
+											- Atualiza tabela de variaveis com o novo registrador.
+											- Atualiza matriz de registradores.
+											- Incrementa contador;
+										- Se não tiver:
+											- STORE do register_cont para a posição da memória encontrada no vetor. ********
+											- Incrementa contador;
+											- LOAD da posição da variavel na memoria para o  register_cont.
+											- Atualiza tabela de variaveis com o novo registrador, retirando do antigo.
+											- Atualiza matriz de registradores.
+											- Incrementa contador;
+											- Verificar se register_cont é < 39;
+												- Se for:
+													- Incrementa register_cont;
+												- Se não for:
+													- Seta register_cont com 8;
+							- REGCOPY o registrador da variável para o result3. *******
+							- Incrementa contador.					
+							- Decrementa o valor do numero de ocorrencias da variavel na tabela
+							- Verifica se há ocorrencia da variável. (Se o numero de ocorrencias for maior que 0).
+								- Se não:
+									- STORE do registrador equivalente da variavel na posição de memoria. ******
+									- Incrementa contador.
+									- Empilha registrador livre.
+									- Atualiza tabela de variaveis.
+									- Atualiza matriz de registradores.
+				- Se o segundo operando for um registrador:
+					- Procurar o temporario no , result4 e result5.
+					- REGCOPY o registrador , 4, 5 para o result3. *******
+					- Incrementa contador.
+					- Sinaliza o registrador ,result 4 ou 5 como ja usado com 0.
+				- Se o segundo operando for um imediato:
+					- Se o imediato for menor que 256
+						- SRVALUE do imediato para o result3. ******
+						- Incrementa contador.
+					- Se não:
+						- Deslocar os bits para a direita, 16 bits.
+						- SRVALUE do deslocado para o result1. ******
+						- Incrementa contador.
+						- Deslocar os bits para a esquerda, 16 bits.
+						- Fazer o imediato - deslocado.
+						- SRVALUE do resultado para o result3. ******
+						- Incrementa contador.
+						- SHL do result1 com 16 para o result1. ******
+						- Incrementa contador.
+						- ADD do result1 com result3 para o result3. ******
+						- Incrementa contador.
+			- Verifica se $4 e $5 estão sendo utilizados. Seleciona um dos dois registradores.
+			- Marca numero do temporario  no registrador escolhido.
+			- Marca o Registrador como escolhido.
+			- OP $2 $3 Registrador********
+			- Incrementa contador. 			
+		- ASSIGN
+			- Verificar se o segundo operando não é o registrador RET
+				-Verificar se o segundo operando é:
+					-Se o segundo operando for variavel:
+						-Verificar se o segundo operando for vetor;
+							-Se o segundo operando for vetor:
+								- Verificar se o deslocamento é registrador, variavel ou imediato
+									- Se for imediato:
+										- Soma o imediato com a posição da memoria de v.
+										- LOAD do resultado da soma para result3; ********
+										- Incrementa contador
+									-Se for variavel:
+										-Verificar se tem um registrador atribuido a variavel;
+											- Se não tiver:
+												- Verifica se a pilha de registradores livres tem elementos.
+													- Se tiver:
+														- Desempilha o endereço de registrador livre.
+														- LOAD da posição da variavel na memoria para o  register_cont.
+														- Atualiza tabela de variaveis com o novo registrador.
+														- Atualiza matriz de registradores.
+														- Incrementa contador;
+													- Se não tiver:
+														- STORE do register_cont para a posição da memória encontrada no vetor. ********
+														- Incrementa contador;
+														- LOAD da posição da variavel na memoria para o  register_cont.
+														- Atualiza tabela de variaveis com o novo registrador, retirando do antigo.
+														- Atualiza matriz de registradores.
+														- Incrementa contador;
+														- Verificar se register_cont é < 39;
+															- Se for:
+																- Incrementa register_cont;
+															- Se não for:
+																- Seta register_cont com 8;
+										- Verifica se o endereço base é menor que 255
+											- Se for:
+												- ADD do endereço base de v com registrador da variavel para result3; ********
+												- Incrementa contador
+											- Se não for:
+												- Verifica se o endereço base é menor que 65536
+													- Se for:
+														- SRVALUE do endereço base de v para o registrador vetor_base. ******
+														- Incrementa contador
+														- ADD do vetor_base com registrador da variavel para result3; ********
+														- Incrementa contador.
+													- Se não for:
+														- Deslocar os bits do endereço base de v para a direita, 16 bits.
+														- SRVALUE do deslocado para o result1. ******
+														- Incrementa contador.
+														- Deslocar os bits do endereço base de v para a esquerda, 16 bits.
+														- Fazer o endereço base de v  - deslocado.
+														- SRVALUE do resultado para o vetor_base. ******
+														- Incrementa contador.
+														- SHL do result1 com 4 para o result1. ******
+														- Incrementa contador.
+														- ADD do result1 com vetor_base para o vetor_base. ******
+														- Incrementa contador.
+														- ADD do vetor_base com registrador da variavel para result3; ********
+														- Incrementa contador.
+										- LOAD.R do valor de memoria localizado no result3 para result3; ********
+										- Incrementa contador.	
+									-Se for registrador:
+										- Procurar o temporario no result4 e result5.
+										- Verifica se o endereço base é menor que 256
+											- Se for:
+												- ADD do endereço base de v com result4,5 para result3; ********
+												- Incrementa contador
+											- Se não for:
+												- Verifica se o endereço base é menor que 65536
+													- Se for:
+														- SRVALUE do endereço base de v para o registrador vetor_base. ******
+														- Incrementa contador
+														- ADD do vetor_base com result4,5 para result3; ********
+														- Incrementa contador.
+													- Se não for:
+														- Deslocar os bits do endereço base de v para a direita, 16 bits.
+														- SRVALUE do deslocado para o result1. ******
+														- Incrementa contador.
+														- Deslocar os bits do endereço base de v para a esquerda, 16 bits.
+														- Fazer o endereço base de v  - deslocado.
+														- SRVALUE do resultado para o vetor_base. ******
+														- Incrementa contador.
+														- SHL do result1 com 4 para o result1. ******
+														- Incrementa contador.
+														- ADD do result1 com vetor_base para o vetor_base. ******
+														- Incrementa contador.
+														- ADD do vetor_base com result4,5 para result3; ********
+														- Incrementa contador.
+										- Sinaliza o registrador result1,result 4 ou 5 como ja uzado com 0.
+										- LOAD.R do valor de memoria localizado no result3 para result3; ********
+										- Incrementa contador.	
+								- Marca que a operação sera feita com o registrador.
+							- Se não for vetor:
+								-Verificar se tem um registrador atribuido a variavel;
+									- Se não tiver:
+										- Verifica se a pilha de registradores livres tem elementos.
+											- Se tiver:
+												- Desempilha o endereço de registrador livre.
+												- LOAD da posição da variavel na memoria para o  register_cont.******
+												- Atualiza tabela de variaveis com o novo registrador.
+												- Atualiza matriz de registradores.
+												- Incrementa contador;
+											- Se não tiver:
+												- STORE do register_cont para a posição da memória encontrada no vetor. ********
+												- Incrementa contador;
+												- LOAD da posição da variavel na memoria para o  register_cont.
+												- Atualiza tabela de variaveis com o novo registrador, retirando do antigo.
+												- Atualiza matriz de registradores.
+												- Incrementa contador;
+												- Verificar se register_cont é < 39;
+													- Se for:
+														- Incrementa register_cont;
+													- Se não for:
+														- Seta register_cont com 8;
+								- REGCOPY o registrador da variável para o result3. *******
+								- Incrementa contador.					
+								- Decrementa o valor do numero de ocorrencias da variavel na tabela
+								- Verifica se há ocorrencia da variável. (Se o numero de ocorrencias for maior que 0).
+									- Se não:
+										- STORE do registrador equivalente da variavel na posição de memoria. ******
+										- Incrementa contador.
+										- Empilha registrador livre.
+										- Atualiza tabela de variaveis.
+										- Atualiza matriz de registradores.
+					- Se o segundo operando for um registrador:
+						- Procurar o temporario no , result4 e result5.
+						- REGCOPY o registrador , 4, 5 para o result3. *******
+						- Incrementa contador.
+						- Sinaliza o registrador ,result 4 ou 5 como ja usado com 0.
+					- Se o segundo operando for um imediato:
+						- Se o imediato for menor que 65536
+							- SRVALUE do imediato para o result3. ******
+							- Incrementa contador.
+						- Se não:
+							- Deslocar os bits para a direita, 16 bits.
+							- SRVALUE do deslocado para o result1. ******
+							- Incrementa contador.
+							- Deslocar os bits para a esquerda, 16 bits.
+							- Fazer o imediato - deslocado.
+							- SRVALUE do resultado para o result3. ******
+							- Incrementa contador.
+							- SHL do result1 com 16 para o result1. ******
+							- Incrementa contador.
+							- ADD do result1 com result3 para o result3. ******
+							- Incrementa contador.
+				-Verificar se o primeiro operando for vetor;
+					-Se o primeiro operando for vetor:
+						- Verificar se o deslocamento é registrador, variavel ou imediato
+							- Se for imediato:
+								- Soma o imediato com a posição da memoria de v.
+								- STORE de result3 para o resultado da soma; ********
+								- Incrementa contador
+							-Se for variavel:
+								-Verificar se tem um registrador atribuido a variavel;
+									- Se não tiver:
+										- Verifica se a pilha de registradores livres tem elementos.
+											- Se tiver:
+												- Desempilha o endereço de registrador livre.
+												- LOAD da posição da variavel na memoria para o  register_cont.
+												- Atualiza tabela de variaveis com o novo registrador.
+												- Atualiza matriz de registradores.
+												- Incrementa contador;
+											- Se não tiver:
+												- STORE do register_cont para a posição da memória encontrada no vetor. ********
+												- Incrementa contador;
+												- LOAD da posição da variavel na memoria para o  register_cont.
+												- Atualiza tabela de variaveis com o novo registrador, retirando do antigo.
+												- Atualiza matriz de registradores.
+												- Incrementa contador;
+												- Verificar se register_cont é < 39;
+													- Se for:
+														- Incrementa register_cont;
+													- Se não for:
+														- Seta register_cont com 8;
+								
+									- Se for:
+										- ADD do endereço base de v com registrador da variavel para result2; ********
+										- Incrementa contador
+									- Se não for:
+										- Verifica se o endereço base é menor que 65536
+											- Se for:
+												- SRVALUE do endereço base de v para o registrador vetor_base. ******
+												- Incrementa contador
+												- ADD do vetor_base com registrador da variavel para result3; ********
+												- Incrementa contador.
+											- Se não for:
+												- Deslocar os bits do endereço base de v para a direita, 16 bits.
+												- SRVALUE do deslocado para o result1. ******
+												- Incrementa contador.
+												- Deslocar os bits do endereço base de v para a esquerda, 16 bits.
+												- Fazer o endereço base de v  - deslocado.
+												- SRVALUE do resultado para o vetor_base. ******
+												- Incrementa contador.
+												- SHL do result1 com 4 para o result1. ******
+												- Incrementa contador.
+												- ADD do result1 com vetor_base para o vetor_base. ******
+												- Incrementa contador.
+												- ADD do vetor_base com registrador da variavel para result3; ********
+												- Incrementa contador.
+								- Verifica se o endereço base é menor que 255
+									- Se for:
+										- ADD do endereço base de v com registrador da variavel para result2; ********
+										- Incrementa contador
+									- Se não for:
+										- SRVALUE do endereço base de v para o registrador vetor_base. ******
+										- Incrementa contador
+										- ADD do vetor_base com registrador da variavel para result2; ********
+										- Incrementa contador.
+								- STORE.R do result3 para result2; ********
+								- Incrementa contador.	
+							-Se for registrador:
+								- Procurar o temporario no result1, result4 e result5.
+								- Verifica se o endereço base é menor que 256
+									- Se for:
+										- ADD do endereço base com result1, 4 ou 5 para result2; ********
+										- Incrementa contador
+									- Se não for:
+										- SRVALUE do endereço base de v para o registrador vetor_base. ******
+										- Incrementa contador
+										- ADD do vetor_base com result1, 4 ou 5 para result2; ********
+										- Incrementa contador
+								- Sinaliza o registrador result1,result 4 ou 5 como ja uzado com 0.
+								- STORE.R do result3 para result2; ********
+								- Incrementa contador.	
+					- Se não for vetor:
+						- REGCOPY o result3 para o registrador da variável. *******
+						- Incrementa contador.
+						-Verificar se tem um registrador atribuido a variavel do primeiro operando;
+							- Se não tiver:
+								- Verifica se a pilha de registradores livres tem elementos.
+									- Se tiver:
+										- Desempilha o endereço de registrador livre.
+										- LOAD da posição da variavel na memoria para o  register_cont.******
+										- Atualiza tabela de variaveis com o novo registrador.
+										- Atualiza matriz de registradores.
+										- Incrementa contador;
+									- Se não tiver:
+										- STORE do register_cont para a posição da memória encontrada no vetor. ********
+										- Incrementa contador;
+										- LOAD da posição da variavel na memoria para o  register_cont.
+										- Atualiza tabela de variaveis com o novo registrador, retirando do antigo.
+										- Atualiza matriz de registradores.
+										- Incrementa contador;
+										- Verificar se register_cont é < 39;
+											- Se for:
+												- Incrementa register_cont;
+											- Se não for:
+												- Seta register_cont com 8;
+						- Decrementa o valor do numero de ocorrencias da variavel na tabela
+						- Verifica se há ocorrencia da variável. (Se o numero de ocorrencias for maior que 0).
+							- Se não:
+								- STORE do registrador equivalente da variavel na posição de memoria. ******
+								- Incrementa contador.
+								- Empilha registrador livre.
+								- Atualiza tabela de variaveis.
+								- Atualiza matriz de registradores.
+			- Se o segundo argumento for um RET.
+				- REGCOPY do return para result3.
+				- Incrementa contador.
+				- Verificar se o primeiro operando for vetor;
+					-Se o primeiro operando for vetor:
+						- Verificar se o deslocamento é registrador, variavel ou imediato
+							- Se for imediato:
+								- Soma o imediato com a posição da memoria de v.
+								- STORE de result3 para o resultado da soma; ********
+								- Incrementa contador
+							-Se for variavel:
+								-Verificar se tem um registrador atribuido a variavel;
+									- Se não tiver:
+										- Verifica se a pilha de registradores livres tem elementos.
+											- Se tiver:
+												- Desempilha o endereço de registrador livre.
+												- LOAD da posição da variavel na memoria para o  register_cont.
+												- Atualiza tabela de variaveis com o novo registrador.
+												- Atualiza matriz de registradores.
+												- Incrementa contador;
+											- Se não tiver:
+												- STORE do register_cont para a posição da memória encontrada no vetor. ********
+												- Incrementa contador;
+												- LOAD da posição da variavel na memoria para o  register_cont.
+												- Atualiza tabela de variaveis com o novo registrador, retirando do antigo.
+												- Atualiza matriz de registradores.
+												- Incrementa contador;
+												- Verificar se register_cont é < 39;
+													- Se for:
+														- Incrementa register_cont;
+													- Se não for:
+														- Seta register_cont com 8;
+								
+									- Se for:
+										- ADD do endereço base de v com registrador da variavel para result2; ********
+										- Incrementa contador
+									- Se não for:
+										- Verifica se o endereço base é menor que 65536
+											- Se for:
+												- SRVALUE do endereço base de v para o registrador vetor_base. ******
+												- Incrementa contador
+												- ADD do vetor_base com registrador da variavel para result3; ********
+												- Incrementa contador.
+											- Se não for:
+												- Deslocar os bits do endereço base de v para a direita, 16 bits.
+												- SRVALUE do deslocado para o result1. ******
+												- Incrementa contador.
+												- Deslocar os bits do endereço base de v para a esquerda, 16 bits.
+												- Fazer o endereço base de v  - deslocado.
+												- SRVALUE do resultado para o vetor_base. ******
+												- Incrementa contador.
+												- SHL do result1 com 4 para o result1. ******
+												- Incrementa contador.
+												- ADD do result1 com vetor_base para o vetor_base. ******
+												- Incrementa contador.
+												- ADD do vetor_base com registrador da variavel para result3; ********
+												- Incrementa contador.
+								- Verifica se o endereço base é menor que 255
+									- Se for:
+										- ADD do endereço base de v com registrador da variavel para result2; ********
+										- Incrementa contador
+									- Se não for:
+										- SRVALUE do endereço base de v para o registrador vetor_base. ******
+										- Incrementa contador
+										- ADD do vetor_base com registrador da variavel para result2; ********
+										- Incrementa contador.
+								- STORE.R do result3 para result2; ********
+								- Incrementa contador.	
+							-Se for registrador:
+								- Procurar o temporario no result1, result4 e result5.
+								- Verifica se o endereço base é menor que 256
+									- Se for:
+										- ADD do endereço base com result1, 4 ou 5 para result2; ********
+										- Incrementa contador
+									- Se não for:
+										- SRVALUE do endereço base de v para o registrador vetor_base. ******
+										- Incrementa contador
+										- ADD do vetor_base com result1, 4 ou 5 para result2; ********
+										- Incrementa contador
+								- Sinaliza o registrador result1,result 4 ou 5 como ja uzado com 0.
+								- STORE.R do result3 para result2; ********
+								- Incrementa contador.	
+					- Se não for vetor:
+						- REGCOPY o result3 para o registrador da variável. *******
+						- Incrementa contador.
+						-Verificar se tem um registrador atribuido a variavel do primeiro operando;
+							- Se não tiver:
+								- Verifica se a pilha de registradores livres tem elementos.
+									- Se tiver:
+										- Desempilha o endereço de registrador livre.
+										- LOAD da posição da variavel na memoria para o  register_cont.******
+										- Atualiza tabela de variaveis com o novo registrador.
+										- Atualiza matriz de registradores.
+										- Incrementa contador;
+									- Se não tiver:
+										- STORE do register_cont para a posição da memória encontrada no vetor. ********
+										- Incrementa contador;
+										- LOAD da posição da variavel na memoria para o  register_cont.
+										- Atualiza tabela de variaveis com o novo registrador, retirando do antigo.
+										- Atualiza matriz de registradores.
+										- Incrementa contador;
+										- Verificar se register_cont é < 39;
+											- Se for:
+												- Incrementa register_cont;
+											- Se não for:
+												- Seta register_cont com 8;
+						- Decrementa o valor do numero de ocorrencias da variavel na tabela
+						- Verifica se há ocorrencia da variável. (Se o numero de ocorrencias for maior que 0).
+							- Se não:
+								- STORE do registrador equivalente da variavel na posição de memoria. ******
+								- Incrementa contador.
+								- Empilha registrador livre.
+								- Atualiza tabela de variaveis.
+								- Atualiza matriz de registradores.

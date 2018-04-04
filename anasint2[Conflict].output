@@ -1,0 +1,1327 @@
+Terminals unused in grammar
+
+   ERROR
+
+
+State 103 conflicts: 1 shift/reduce
+
+
+Grammar
+
+    0 $accept: programa $end
+
+    1 programa: declaracao_lista
+
+    2 declaracao_lista: declaracao_lista declaracao
+    3                 | declaracao
+
+    4 declaracao: var_declaracao
+    5           | fun_declaracao
+
+    6 $@1: %empty
+
+    7 var_declaracao: tipo_especificador ID $@1 SEMICOLON
+
+    8 $@2: %empty
+
+    9 $@3: %empty
+
+   10 var_declaracao: tipo_especificador ID $@2 LSQRBRA NUMERO $@3 RSQRBRA SEMICOLON
+
+   11 tipo_especificador: INT
+   12                   | VOID
+
+   13 $@4: %empty
+
+   14 fun_declaracao: tipo_especificador ID $@4 LPARENTS params RPARENTS composto_decl
+
+   15 params: param_lista
+   16       | VOID
+
+   17 param_lista: param_lista COMMA param
+   18            | param
+
+   19 param: tipo_especificador ID
+
+   20 $@5: %empty
+
+   21 $@6: %empty
+
+   22 param: tipo_especificador ID $@5 LSQRBRA NUMERO $@6 RSQRBRA
+
+   23 composto_decl: LCURBRA local_declaracoes statement_lista RCURBRA
+
+   24 local_declaracoes: local_declaracoes var_declaracao
+   25                  | %empty
+
+   26 statement_lista: statement_lista statement
+   27                | %empty
+
+   28 statement: expressao_decl
+   29          | composto_decl
+   30          | selecao_decl
+   31          | iteracao_decl
+   32          | retorno_decl
+
+   33 expressao_decl: expressao SEMICOLON
+   34               | SEMICOLON
+
+   35 selecao_decl: IF LPARENTS expressao RPARENTS statement
+   36             | IF LPARENTS expressao RPARENTS statement ELSE statement
+
+   37 iteracao_decl: WHILE LPARENTS expressao RPARENTS statement
+
+   38 retorno_decl: RETURN SEMICOLON
+   39             | RETURN expressao SEMICOLON
+
+   40 expressao: var ASSIGN expressao
+   41          | simples_expressao
+
+   42 var: ID
+
+   43 $@7: %empty
+
+   44 var: ID $@7 LSQRBRA expressao RSQRBRA
+
+   45 simples_expressao: soma_expressao relacional soma_expressao
+   46                  | soma_expressao
+
+   47 relacional: LESSEQ
+   48           | LESS
+   49           | GREAT
+   50           | GREATEQ
+   51           | EQUAL
+   52           | NEQUAL
+
+   53 soma_expressao: soma_expressao soma termo
+   54               | termo
+
+   55 soma: ADD
+   56     | SUB
+
+   57 termo: termo mult fator
+   58      | fator
+
+   59 mult: MULT
+   60     | DIV
+
+   61 fator: LPARENTS expressao RPARENTS
+   62      | var
+   63      | ativacao
+   64      | NUMERO
+
+   65 $@8: %empty
+
+   66 ativacao: ID $@8 LPARENTS args RPARENTS
+
+   67 args: arg_lista
+   68     | %empty
+
+   69 arg_lista: arg_lista COMMA expressao
+   70          | expressao
+
+
+Terminals, with rules where they appear
+
+$end (0) 0
+IF (1) 35 36
+INT (2) 11
+RETURN (3) 38 39
+VOID (4) 12 16
+WHILE (5) 37
+ID (6) 7 10 14 19 22 42 44 66
+NUMERO (7) 10 22 64
+ADD (8) 55
+SUB (9) 56
+MULT (10) 59
+DIV (11) 60
+LESS (12) 48
+LESSEQ (13) 47
+GREAT (14) 49
+GREATEQ (15) 50
+EQUAL (16) 51
+NEQUAL (17) 52
+ASSIGN (18) 40
+SEMICOLON (19) 7 10 33 34 38 39
+COMMA (20) 17 69
+LPARENTS (21) 14 35 36 37 61 66
+RPARENTS (22) 14 35 36 37 61 66
+LSQRBRA (23) 10 22 44
+RSQRBRA (24) 10 22 44
+LCURBRA (25) 23
+RCURBRA (26) 23
+ERROR (27)
+error (256)
+ELSE (258) 36
+
+
+Nonterminals, with rules where they appear
+
+$accept (31)
+    on left: 0
+programa (32)
+    on left: 1, on right: 0
+declaracao_lista (33)
+    on left: 2 3, on right: 1 2
+declaracao (34)
+    on left: 4 5, on right: 2 3
+var_declaracao (35)
+    on left: 7 10, on right: 4 24
+$@1 (36)
+    on left: 6, on right: 7
+$@2 (37)
+    on left: 8, on right: 10
+$@3 (38)
+    on left: 9, on right: 10
+tipo_especificador (39)
+    on left: 11 12, on right: 7 10 14 19 22
+fun_declaracao (40)
+    on left: 14, on right: 5
+$@4 (41)
+    on left: 13, on right: 14
+params (42)
+    on left: 15 16, on right: 14
+param_lista (43)
+    on left: 17 18, on right: 15 17
+param (44)
+    on left: 19 22, on right: 17 18
+$@5 (45)
+    on left: 20, on right: 22
+$@6 (46)
+    on left: 21, on right: 22
+composto_decl (47)
+    on left: 23, on right: 14 29
+local_declaracoes (48)
+    on left: 24 25, on right: 23 24
+statement_lista (49)
+    on left: 26 27, on right: 23 26
+statement (50)
+    on left: 28 29 30 31 32, on right: 26 35 36 37
+expressao_decl (51)
+    on left: 33 34, on right: 28
+selecao_decl (52)
+    on left: 35 36, on right: 30
+iteracao_decl (53)
+    on left: 37, on right: 31
+retorno_decl (54)
+    on left: 38 39, on right: 32
+expressao (55)
+    on left: 40 41, on right: 33 35 36 37 39 40 44 61 69 70
+var (56)
+    on left: 42 44, on right: 40 62
+$@7 (57)
+    on left: 43, on right: 44
+simples_expressao (58)
+    on left: 45 46, on right: 41
+relacional (59)
+    on left: 47 48 49 50 51 52, on right: 45
+soma_expressao (60)
+    on left: 53 54, on right: 45 46 53
+soma (61)
+    on left: 55 56, on right: 53
+termo (62)
+    on left: 57 58, on right: 53 54 57
+mult (63)
+    on left: 59 60, on right: 57
+fator (64)
+    on left: 61 62 63 64, on right: 57 58
+ativacao (65)
+    on left: 66, on right: 63
+$@8 (66)
+    on left: 65, on right: 66
+args (67)
+    on left: 67 68, on right: 66
+arg_lista (68)
+    on left: 69 70, on right: 67 69
+
+
+State 0
+
+    0 $accept: . programa $end
+
+    INT   shift, and go to state 1
+    VOID  shift, and go to state 2
+
+    programa            go to state 3
+    declaracao_lista    go to state 4
+    declaracao          go to state 5
+    var_declaracao      go to state 6
+    tipo_especificador  go to state 7
+    fun_declaracao      go to state 8
+
+
+State 1
+
+   11 tipo_especificador: INT .
+
+    $default  reduce using rule 11 (tipo_especificador)
+
+
+State 2
+
+   12 tipo_especificador: VOID .
+
+    $default  reduce using rule 12 (tipo_especificador)
+
+
+State 3
+
+    0 $accept: programa . $end
+
+    $end  shift, and go to state 9
+
+
+State 4
+
+    1 programa: declaracao_lista .
+    2 declaracao_lista: declaracao_lista . declaracao
+
+    INT   shift, and go to state 1
+    VOID  shift, and go to state 2
+
+    $default  reduce using rule 1 (programa)
+
+    declaracao          go to state 10
+    var_declaracao      go to state 6
+    tipo_especificador  go to state 7
+    fun_declaracao      go to state 8
+
+
+State 5
+
+    3 declaracao_lista: declaracao .
+
+    $default  reduce using rule 3 (declaracao_lista)
+
+
+State 6
+
+    4 declaracao: var_declaracao .
+
+    $default  reduce using rule 4 (declaracao)
+
+
+State 7
+
+    7 var_declaracao: tipo_especificador . ID $@1 SEMICOLON
+   10               | tipo_especificador . ID $@2 LSQRBRA NUMERO $@3 RSQRBRA SEMICOLON
+   14 fun_declaracao: tipo_especificador . ID $@4 LPARENTS params RPARENTS composto_decl
+
+    ID  shift, and go to state 11
+
+
+State 8
+
+    5 declaracao: fun_declaracao .
+
+    $default  reduce using rule 5 (declaracao)
+
+
+State 9
+
+    0 $accept: programa $end .
+
+    $default  accept
+
+
+State 10
+
+    2 declaracao_lista: declaracao_lista declaracao .
+
+    $default  reduce using rule 2 (declaracao_lista)
+
+
+State 11
+
+    7 var_declaracao: tipo_especificador ID . $@1 SEMICOLON
+   10               | tipo_especificador ID . $@2 LSQRBRA NUMERO $@3 RSQRBRA SEMICOLON
+   14 fun_declaracao: tipo_especificador ID . $@4 LPARENTS params RPARENTS composto_decl
+
+    LPARENTS  reduce using rule 13 ($@4)
+    LSQRBRA   reduce using rule 8 ($@2)
+    $default  reduce using rule 6 ($@1)
+
+    $@1  go to state 12
+    $@2  go to state 13
+    $@4  go to state 14
+
+
+State 12
+
+    7 var_declaracao: tipo_especificador ID $@1 . SEMICOLON
+
+    SEMICOLON  shift, and go to state 15
+
+
+State 13
+
+   10 var_declaracao: tipo_especificador ID $@2 . LSQRBRA NUMERO $@3 RSQRBRA SEMICOLON
+
+    LSQRBRA  shift, and go to state 16
+
+
+State 14
+
+   14 fun_declaracao: tipo_especificador ID $@4 . LPARENTS params RPARENTS composto_decl
+
+    LPARENTS  shift, and go to state 17
+
+
+State 15
+
+    7 var_declaracao: tipo_especificador ID $@1 SEMICOLON .
+
+    $default  reduce using rule 7 (var_declaracao)
+
+
+State 16
+
+   10 var_declaracao: tipo_especificador ID $@2 LSQRBRA . NUMERO $@3 RSQRBRA SEMICOLON
+
+    NUMERO  shift, and go to state 18
+
+
+State 17
+
+   14 fun_declaracao: tipo_especificador ID $@4 LPARENTS . params RPARENTS composto_decl
+
+    INT   shift, and go to state 1
+    VOID  shift, and go to state 19
+
+    tipo_especificador  go to state 20
+    params              go to state 21
+    param_lista         go to state 22
+    param               go to state 23
+
+
+State 18
+
+   10 var_declaracao: tipo_especificador ID $@2 LSQRBRA NUMERO . $@3 RSQRBRA SEMICOLON
+
+    $default  reduce using rule 9 ($@3)
+
+    $@3  go to state 24
+
+
+State 19
+
+   12 tipo_especificador: VOID .
+   16 params: VOID .
+
+    RPARENTS  reduce using rule 16 (params)
+    $default  reduce using rule 12 (tipo_especificador)
+
+
+State 20
+
+   19 param: tipo_especificador . ID
+   22      | tipo_especificador . ID $@5 LSQRBRA NUMERO $@6 RSQRBRA
+
+    ID  shift, and go to state 25
+
+
+State 21
+
+   14 fun_declaracao: tipo_especificador ID $@4 LPARENTS params . RPARENTS composto_decl
+
+    RPARENTS  shift, and go to state 26
+
+
+State 22
+
+   15 params: param_lista .
+   17 param_lista: param_lista . COMMA param
+
+    COMMA  shift, and go to state 27
+
+    $default  reduce using rule 15 (params)
+
+
+State 23
+
+   18 param_lista: param .
+
+    $default  reduce using rule 18 (param_lista)
+
+
+State 24
+
+   10 var_declaracao: tipo_especificador ID $@2 LSQRBRA NUMERO $@3 . RSQRBRA SEMICOLON
+
+    RSQRBRA  shift, and go to state 28
+
+
+State 25
+
+   19 param: tipo_especificador ID .
+   22      | tipo_especificador ID . $@5 LSQRBRA NUMERO $@6 RSQRBRA
+
+    LSQRBRA   reduce using rule 20 ($@5)
+    $default  reduce using rule 19 (param)
+
+    $@5  go to state 29
+
+
+State 26
+
+   14 fun_declaracao: tipo_especificador ID $@4 LPARENTS params RPARENTS . composto_decl
+
+    LCURBRA  shift, and go to state 30
+
+    composto_decl  go to state 31
+
+
+State 27
+
+   17 param_lista: param_lista COMMA . param
+
+    INT   shift, and go to state 1
+    VOID  shift, and go to state 2
+
+    tipo_especificador  go to state 20
+    param               go to state 32
+
+
+State 28
+
+   10 var_declaracao: tipo_especificador ID $@2 LSQRBRA NUMERO $@3 RSQRBRA . SEMICOLON
+
+    SEMICOLON  shift, and go to state 33
+
+
+State 29
+
+   22 param: tipo_especificador ID $@5 . LSQRBRA NUMERO $@6 RSQRBRA
+
+    LSQRBRA  shift, and go to state 34
+
+
+State 30
+
+   23 composto_decl: LCURBRA . local_declaracoes statement_lista RCURBRA
+
+    $default  reduce using rule 25 (local_declaracoes)
+
+    local_declaracoes  go to state 35
+
+
+State 31
+
+   14 fun_declaracao: tipo_especificador ID $@4 LPARENTS params RPARENTS composto_decl .
+
+    $default  reduce using rule 14 (fun_declaracao)
+
+
+State 32
+
+   17 param_lista: param_lista COMMA param .
+
+    $default  reduce using rule 17 (param_lista)
+
+
+State 33
+
+   10 var_declaracao: tipo_especificador ID $@2 LSQRBRA NUMERO $@3 RSQRBRA SEMICOLON .
+
+    $default  reduce using rule 10 (var_declaracao)
+
+
+State 34
+
+   22 param: tipo_especificador ID $@5 LSQRBRA . NUMERO $@6 RSQRBRA
+
+    NUMERO  shift, and go to state 36
+
+
+State 35
+
+   23 composto_decl: LCURBRA local_declaracoes . statement_lista RCURBRA
+   24 local_declaracoes: local_declaracoes . var_declaracao
+
+    INT   shift, and go to state 1
+    VOID  shift, and go to state 2
+
+    $default  reduce using rule 27 (statement_lista)
+
+    var_declaracao      go to state 37
+    tipo_especificador  go to state 38
+    statement_lista     go to state 39
+
+
+State 36
+
+   22 param: tipo_especificador ID $@5 LSQRBRA NUMERO . $@6 RSQRBRA
+
+    $default  reduce using rule 21 ($@6)
+
+    $@6  go to state 40
+
+
+State 37
+
+   24 local_declaracoes: local_declaracoes var_declaracao .
+
+    $default  reduce using rule 24 (local_declaracoes)
+
+
+State 38
+
+    7 var_declaracao: tipo_especificador . ID $@1 SEMICOLON
+   10               | tipo_especificador . ID $@2 LSQRBRA NUMERO $@3 RSQRBRA SEMICOLON
+
+    ID  shift, and go to state 41
+
+
+State 39
+
+   23 composto_decl: LCURBRA local_declaracoes statement_lista . RCURBRA
+   26 statement_lista: statement_lista . statement
+
+    IF         shift, and go to state 42
+    RETURN     shift, and go to state 43
+    WHILE      shift, and go to state 44
+    ID         shift, and go to state 45
+    NUMERO     shift, and go to state 46
+    SEMICOLON  shift, and go to state 47
+    LPARENTS   shift, and go to state 48
+    LCURBRA    shift, and go to state 30
+    RCURBRA    shift, and go to state 49
+
+    composto_decl      go to state 50
+    statement          go to state 51
+    expressao_decl     go to state 52
+    selecao_decl       go to state 53
+    iteracao_decl      go to state 54
+    retorno_decl       go to state 55
+    expressao          go to state 56
+    var                go to state 57
+    simples_expressao  go to state 58
+    soma_expressao     go to state 59
+    termo              go to state 60
+    fator              go to state 61
+    ativacao           go to state 62
+
+
+State 40
+
+   22 param: tipo_especificador ID $@5 LSQRBRA NUMERO $@6 . RSQRBRA
+
+    RSQRBRA  shift, and go to state 63
+
+
+State 41
+
+    7 var_declaracao: tipo_especificador ID . $@1 SEMICOLON
+   10               | tipo_especificador ID . $@2 LSQRBRA NUMERO $@3 RSQRBRA SEMICOLON
+
+    LSQRBRA   reduce using rule 8 ($@2)
+    $default  reduce using rule 6 ($@1)
+
+    $@1  go to state 12
+    $@2  go to state 13
+
+
+State 42
+
+   35 selecao_decl: IF . LPARENTS expressao RPARENTS statement
+   36             | IF . LPARENTS expressao RPARENTS statement ELSE statement
+
+    LPARENTS  shift, and go to state 64
+
+
+State 43
+
+   38 retorno_decl: RETURN . SEMICOLON
+   39             | RETURN . expressao SEMICOLON
+
+    ID         shift, and go to state 45
+    NUMERO     shift, and go to state 46
+    SEMICOLON  shift, and go to state 65
+    LPARENTS   shift, and go to state 48
+
+    expressao          go to state 66
+    var                go to state 57
+    simples_expressao  go to state 58
+    soma_expressao     go to state 59
+    termo              go to state 60
+    fator              go to state 61
+    ativacao           go to state 62
+
+
+State 44
+
+   37 iteracao_decl: WHILE . LPARENTS expressao RPARENTS statement
+
+    LPARENTS  shift, and go to state 67
+
+
+State 45
+
+   42 var: ID .
+   44    | ID . $@7 LSQRBRA expressao RSQRBRA
+   66 ativacao: ID . $@8 LPARENTS args RPARENTS
+
+    LPARENTS  reduce using rule 65 ($@8)
+    LSQRBRA   reduce using rule 43 ($@7)
+    $default  reduce using rule 42 (var)
+
+    $@7  go to state 68
+    $@8  go to state 69
+
+
+State 46
+
+   64 fator: NUMERO .
+
+    $default  reduce using rule 64 (fator)
+
+
+State 47
+
+   34 expressao_decl: SEMICOLON .
+
+    $default  reduce using rule 34 (expressao_decl)
+
+
+State 48
+
+   61 fator: LPARENTS . expressao RPARENTS
+
+    ID        shift, and go to state 45
+    NUMERO    shift, and go to state 46
+    LPARENTS  shift, and go to state 48
+
+    expressao          go to state 70
+    var                go to state 57
+    simples_expressao  go to state 58
+    soma_expressao     go to state 59
+    termo              go to state 60
+    fator              go to state 61
+    ativacao           go to state 62
+
+
+State 49
+
+   23 composto_decl: LCURBRA local_declaracoes statement_lista RCURBRA .
+
+    $default  reduce using rule 23 (composto_decl)
+
+
+State 50
+
+   29 statement: composto_decl .
+
+    $default  reduce using rule 29 (statement)
+
+
+State 51
+
+   26 statement_lista: statement_lista statement .
+
+    $default  reduce using rule 26 (statement_lista)
+
+
+State 52
+
+   28 statement: expressao_decl .
+
+    $default  reduce using rule 28 (statement)
+
+
+State 53
+
+   30 statement: selecao_decl .
+
+    $default  reduce using rule 30 (statement)
+
+
+State 54
+
+   31 statement: iteracao_decl .
+
+    $default  reduce using rule 31 (statement)
+
+
+State 55
+
+   32 statement: retorno_decl .
+
+    $default  reduce using rule 32 (statement)
+
+
+State 56
+
+   33 expressao_decl: expressao . SEMICOLON
+
+    SEMICOLON  shift, and go to state 71
+
+
+State 57
+
+   40 expressao: var . ASSIGN expressao
+   62 fator: var .
+
+    ASSIGN  shift, and go to state 72
+
+    $default  reduce using rule 62 (fator)
+
+
+State 58
+
+   41 expressao: simples_expressao .
+
+    $default  reduce using rule 41 (expressao)
+
+
+State 59
+
+   45 simples_expressao: soma_expressao . relacional soma_expressao
+   46                  | soma_expressao .
+   53 soma_expressao: soma_expressao . soma termo
+
+    ADD      shift, and go to state 73
+    SUB      shift, and go to state 74
+    LESS     shift, and go to state 75
+    LESSEQ   shift, and go to state 76
+    GREAT    shift, and go to state 77
+    GREATEQ  shift, and go to state 78
+    EQUAL    shift, and go to state 79
+    NEQUAL   shift, and go to state 80
+
+    $default  reduce using rule 46 (simples_expressao)
+
+    relacional  go to state 81
+    soma        go to state 82
+
+
+State 60
+
+   54 soma_expressao: termo .
+   57 termo: termo . mult fator
+
+    MULT  shift, and go to state 83
+    DIV   shift, and go to state 84
+
+    $default  reduce using rule 54 (soma_expressao)
+
+    mult  go to state 85
+
+
+State 61
+
+   58 termo: fator .
+
+    $default  reduce using rule 58 (termo)
+
+
+State 62
+
+   63 fator: ativacao .
+
+    $default  reduce using rule 63 (fator)
+
+
+State 63
+
+   22 param: tipo_especificador ID $@5 LSQRBRA NUMERO $@6 RSQRBRA .
+
+    $default  reduce using rule 22 (param)
+
+
+State 64
+
+   35 selecao_decl: IF LPARENTS . expressao RPARENTS statement
+   36             | IF LPARENTS . expressao RPARENTS statement ELSE statement
+
+    ID        shift, and go to state 45
+    NUMERO    shift, and go to state 46
+    LPARENTS  shift, and go to state 48
+
+    expressao          go to state 86
+    var                go to state 57
+    simples_expressao  go to state 58
+    soma_expressao     go to state 59
+    termo              go to state 60
+    fator              go to state 61
+    ativacao           go to state 62
+
+
+State 65
+
+   38 retorno_decl: RETURN SEMICOLON .
+
+    $default  reduce using rule 38 (retorno_decl)
+
+
+State 66
+
+   39 retorno_decl: RETURN expressao . SEMICOLON
+
+    SEMICOLON  shift, and go to state 87
+
+
+State 67
+
+   37 iteracao_decl: WHILE LPARENTS . expressao RPARENTS statement
+
+    ID        shift, and go to state 45
+    NUMERO    shift, and go to state 46
+    LPARENTS  shift, and go to state 48
+
+    expressao          go to state 88
+    var                go to state 57
+    simples_expressao  go to state 58
+    soma_expressao     go to state 59
+    termo              go to state 60
+    fator              go to state 61
+    ativacao           go to state 62
+
+
+State 68
+
+   44 var: ID $@7 . LSQRBRA expressao RSQRBRA
+
+    LSQRBRA  shift, and go to state 89
+
+
+State 69
+
+   66 ativacao: ID $@8 . LPARENTS args RPARENTS
+
+    LPARENTS  shift, and go to state 90
+
+
+State 70
+
+   61 fator: LPARENTS expressao . RPARENTS
+
+    RPARENTS  shift, and go to state 91
+
+
+State 71
+
+   33 expressao_decl: expressao SEMICOLON .
+
+    $default  reduce using rule 33 (expressao_decl)
+
+
+State 72
+
+   40 expressao: var ASSIGN . expressao
+
+    ID        shift, and go to state 45
+    NUMERO    shift, and go to state 46
+    LPARENTS  shift, and go to state 48
+
+    expressao          go to state 92
+    var                go to state 57
+    simples_expressao  go to state 58
+    soma_expressao     go to state 59
+    termo              go to state 60
+    fator              go to state 61
+    ativacao           go to state 62
+
+
+State 73
+
+   55 soma: ADD .
+
+    $default  reduce using rule 55 (soma)
+
+
+State 74
+
+   56 soma: SUB .
+
+    $default  reduce using rule 56 (soma)
+
+
+State 75
+
+   48 relacional: LESS .
+
+    $default  reduce using rule 48 (relacional)
+
+
+State 76
+
+   47 relacional: LESSEQ .
+
+    $default  reduce using rule 47 (relacional)
+
+
+State 77
+
+   49 relacional: GREAT .
+
+    $default  reduce using rule 49 (relacional)
+
+
+State 78
+
+   50 relacional: GREATEQ .
+
+    $default  reduce using rule 50 (relacional)
+
+
+State 79
+
+   51 relacional: EQUAL .
+
+    $default  reduce using rule 51 (relacional)
+
+
+State 80
+
+   52 relacional: NEQUAL .
+
+    $default  reduce using rule 52 (relacional)
+
+
+State 81
+
+   45 simples_expressao: soma_expressao relacional . soma_expressao
+
+    ID        shift, and go to state 45
+    NUMERO    shift, and go to state 46
+    LPARENTS  shift, and go to state 48
+
+    var             go to state 93
+    soma_expressao  go to state 94
+    termo           go to state 60
+    fator           go to state 61
+    ativacao        go to state 62
+
+
+State 82
+
+   53 soma_expressao: soma_expressao soma . termo
+
+    ID        shift, and go to state 45
+    NUMERO    shift, and go to state 46
+    LPARENTS  shift, and go to state 48
+
+    var       go to state 93
+    termo     go to state 95
+    fator     go to state 61
+    ativacao  go to state 62
+
+
+State 83
+
+   59 mult: MULT .
+
+    $default  reduce using rule 59 (mult)
+
+
+State 84
+
+   60 mult: DIV .
+
+    $default  reduce using rule 60 (mult)
+
+
+State 85
+
+   57 termo: termo mult . fator
+
+    ID        shift, and go to state 45
+    NUMERO    shift, and go to state 46
+    LPARENTS  shift, and go to state 48
+
+    var       go to state 93
+    fator     go to state 96
+    ativacao  go to state 62
+
+
+State 86
+
+   35 selecao_decl: IF LPARENTS expressao . RPARENTS statement
+   36             | IF LPARENTS expressao . RPARENTS statement ELSE statement
+
+    RPARENTS  shift, and go to state 97
+
+
+State 87
+
+   39 retorno_decl: RETURN expressao SEMICOLON .
+
+    $default  reduce using rule 39 (retorno_decl)
+
+
+State 88
+
+   37 iteracao_decl: WHILE LPARENTS expressao . RPARENTS statement
+
+    RPARENTS  shift, and go to state 98
+
+
+State 89
+
+   44 var: ID $@7 LSQRBRA . expressao RSQRBRA
+
+    ID        shift, and go to state 45
+    NUMERO    shift, and go to state 46
+    LPARENTS  shift, and go to state 48
+
+    expressao          go to state 99
+    var                go to state 57
+    simples_expressao  go to state 58
+    soma_expressao     go to state 59
+    termo              go to state 60
+    fator              go to state 61
+    ativacao           go to state 62
+
+
+State 90
+
+   66 ativacao: ID $@8 LPARENTS . args RPARENTS
+
+    ID        shift, and go to state 45
+    NUMERO    shift, and go to state 46
+    LPARENTS  shift, and go to state 48
+
+    $default  reduce using rule 68 (args)
+
+    expressao          go to state 100
+    var                go to state 57
+    simples_expressao  go to state 58
+    soma_expressao     go to state 59
+    termo              go to state 60
+    fator              go to state 61
+    ativacao           go to state 62
+    args               go to state 101
+    arg_lista          go to state 102
+
+
+State 91
+
+   61 fator: LPARENTS expressao RPARENTS .
+
+    $default  reduce using rule 61 (fator)
+
+
+State 92
+
+   40 expressao: var ASSIGN expressao .
+
+    $default  reduce using rule 40 (expressao)
+
+
+State 93
+
+   62 fator: var .
+
+    $default  reduce using rule 62 (fator)
+
+
+State 94
+
+   45 simples_expressao: soma_expressao relacional soma_expressao .
+   53 soma_expressao: soma_expressao . soma termo
+
+    ADD  shift, and go to state 73
+    SUB  shift, and go to state 74
+
+    $default  reduce using rule 45 (simples_expressao)
+
+    soma  go to state 82
+
+
+State 95
+
+   53 soma_expressao: soma_expressao soma termo .
+   57 termo: termo . mult fator
+
+    MULT  shift, and go to state 83
+    DIV   shift, and go to state 84
+
+    $default  reduce using rule 53 (soma_expressao)
+
+    mult  go to state 85
+
+
+State 96
+
+   57 termo: termo mult fator .
+
+    $default  reduce using rule 57 (termo)
+
+
+State 97
+
+   35 selecao_decl: IF LPARENTS expressao RPARENTS . statement
+   36             | IF LPARENTS expressao RPARENTS . statement ELSE statement
+
+    IF         shift, and go to state 42
+    RETURN     shift, and go to state 43
+    WHILE      shift, and go to state 44
+    ID         shift, and go to state 45
+    NUMERO     shift, and go to state 46
+    SEMICOLON  shift, and go to state 47
+    LPARENTS   shift, and go to state 48
+    LCURBRA    shift, and go to state 30
+
+    composto_decl      go to state 50
+    statement          go to state 103
+    expressao_decl     go to state 52
+    selecao_decl       go to state 53
+    iteracao_decl      go to state 54
+    retorno_decl       go to state 55
+    expressao          go to state 56
+    var                go to state 57
+    simples_expressao  go to state 58
+    soma_expressao     go to state 59
+    termo              go to state 60
+    fator              go to state 61
+    ativacao           go to state 62
+
+
+State 98
+
+   37 iteracao_decl: WHILE LPARENTS expressao RPARENTS . statement
+
+    IF         shift, and go to state 42
+    RETURN     shift, and go to state 43
+    WHILE      shift, and go to state 44
+    ID         shift, and go to state 45
+    NUMERO     shift, and go to state 46
+    SEMICOLON  shift, and go to state 47
+    LPARENTS   shift, and go to state 48
+    LCURBRA    shift, and go to state 30
+
+    composto_decl      go to state 50
+    statement          go to state 104
+    expressao_decl     go to state 52
+    selecao_decl       go to state 53
+    iteracao_decl      go to state 54
+    retorno_decl       go to state 55
+    expressao          go to state 56
+    var                go to state 57
+    simples_expressao  go to state 58
+    soma_expressao     go to state 59
+    termo              go to state 60
+    fator              go to state 61
+    ativacao           go to state 62
+
+
+State 99
+
+   44 var: ID $@7 LSQRBRA expressao . RSQRBRA
+
+    RSQRBRA  shift, and go to state 105
+
+
+State 100
+
+   70 arg_lista: expressao .
+
+    $default  reduce using rule 70 (arg_lista)
+
+
+State 101
+
+   66 ativacao: ID $@8 LPARENTS args . RPARENTS
+
+    RPARENTS  shift, and go to state 106
+
+
+State 102
+
+   67 args: arg_lista .
+   69 arg_lista: arg_lista . COMMA expressao
+
+    COMMA  shift, and go to state 107
+
+    $default  reduce using rule 67 (args)
+
+
+State 103
+
+   35 selecao_decl: IF LPARENTS expressao RPARENTS statement .
+   36             | IF LPARENTS expressao RPARENTS statement . ELSE statement
+
+    ELSE  shift, and go to state 108
+
+    ELSE      [reduce using rule 35 (selecao_decl)]
+    $default  reduce using rule 35 (selecao_decl)
+
+
+State 104
+
+   37 iteracao_decl: WHILE LPARENTS expressao RPARENTS statement .
+
+    $default  reduce using rule 37 (iteracao_decl)
+
+
+State 105
+
+   44 var: ID $@7 LSQRBRA expressao RSQRBRA .
+
+    $default  reduce using rule 44 (var)
+
+
+State 106
+
+   66 ativacao: ID $@8 LPARENTS args RPARENTS .
+
+    $default  reduce using rule 66 (ativacao)
+
+
+State 107
+
+   69 arg_lista: arg_lista COMMA . expressao
+
+    ID        shift, and go to state 45
+    NUMERO    shift, and go to state 46
+    LPARENTS  shift, and go to state 48
+
+    expressao          go to state 109
+    var                go to state 57
+    simples_expressao  go to state 58
+    soma_expressao     go to state 59
+    termo              go to state 60
+    fator              go to state 61
+    ativacao           go to state 62
+
+
+State 108
+
+   36 selecao_decl: IF LPARENTS expressao RPARENTS statement ELSE . statement
+
+    IF         shift, and go to state 42
+    RETURN     shift, and go to state 43
+    WHILE      shift, and go to state 44
+    ID         shift, and go to state 45
+    NUMERO     shift, and go to state 46
+    SEMICOLON  shift, and go to state 47
+    LPARENTS   shift, and go to state 48
+    LCURBRA    shift, and go to state 30
+
+    composto_decl      go to state 50
+    statement          go to state 110
+    expressao_decl     go to state 52
+    selecao_decl       go to state 53
+    iteracao_decl      go to state 54
+    retorno_decl       go to state 55
+    expressao          go to state 56
+    var                go to state 57
+    simples_expressao  go to state 58
+    soma_expressao     go to state 59
+    termo              go to state 60
+    fator              go to state 61
+    ativacao           go to state 62
+
+
+State 109
+
+   69 arg_lista: arg_lista COMMA expressao .
+
+    $default  reduce using rule 69 (arg_lista)
+
+
+State 110
+
+   36 selecao_decl: IF LPARENTS expressao RPARENTS statement ELSE statement .
+
+    $default  reduce using rule 36 (selecao_decl)

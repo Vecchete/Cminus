@@ -1,0 +1,5 @@
+bison -d -v -g -W'none' anasint2.y
+flex analex2.l
+gcc -c -g -w lex.yy.c 
+g++ -w -g -O0 anasint2.tab.c lex.yy.o -o cminus
+./cminus
